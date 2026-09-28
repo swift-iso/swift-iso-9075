@@ -15,12 +15,10 @@ extension ISO_9075 {
             }.joined() + "'"
         }
 
-        public static func timestamp(_ instant: Instant) throws(Value.Failure) -> String {
+        public static func timestamp(_ instant: Time.Instant) throws(Value.Failure) -> String {
             let dateTime: ISO_8601.DateTime
             do throws(ISO_8601.DateTime.Error) {
-                dateTime = try ISO_8601.DateTime(
-                    Time.Instant(offset: .seconds(instant.secondsSinceUnixEpoch) + .nanoseconds(instant.nanosecondFraction))
-                )
+                dateTime = try ISO_8601.DateTime(instant)
             } catch {
                 throw Value.Failure(error)
             }
@@ -30,7 +28,7 @@ extension ISO_9075 {
                 + padded(dateTime.nanoseconds / 1_000_000, 3)
         }
 
-        public static func instant(_ text: some StringProtocol) throws(Value.Failure) -> Instant {
+        public static func instant(_ text: some StringProtocol) throws(Value.Failure) -> Time.Instant {
             let fields = text.split(whereSeparator: { " T-:.".contains($0) }).map { Int($0) }
             guard fields.count >= 6, fields.allSatisfy({ $0 != nil }) else {
                 throw Value.Failure("\(text) is not a timestamp")
@@ -43,7 +41,7 @@ extension ISO_9075 {
                 throw Value.Failure(error)
             }
             let fraction = fields.count > 6 ? text.split(separator: ".").last.map { String($0.prefix(9)) } ?? "" : ""
-            return Instant(
+            return Time.Instant(
                 _unchecked: (),
                 secondsSinceUnixEpoch: Int64(days) * 86_400 + Int64(values[3] * 3_600 + values[4] * 60 + values[5]),
                 nanosecondFraction: Int32((fraction + String(repeating: "0", count: 9 - fraction.count))) ?? 0

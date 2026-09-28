@@ -10,7 +10,7 @@ extension ISO_9075 {
         case double(Double)
         case text(String)
         case blob([Byte])
-        case timestamp(Instant)
+        case timestamp(Time.Instant)
         case uuid(RFC_4122.UUID)
         case decimal(String)
         case json([Byte])
