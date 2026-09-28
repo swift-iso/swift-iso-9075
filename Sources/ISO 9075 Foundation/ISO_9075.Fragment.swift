@@ -128,3 +128,16 @@ extension ISO_9075.Fragment: ExpressibleByStringInterpolation {
         }
     }
 }
+
+extension ISO_9075.Fragment: CustomDebugStringConvertible {
+    public var debugDescription: String {
+        segments.map { segment in
+            switch segment {
+            case .sql(let sql): sql
+            case .value(let value): (try? value.literal) ?? "<invalid: \(value)>"
+            case .identifier(let identifier): identifier.delimited
+            }
+        }
+        .joined()
+    }
+}

@@ -70,3 +70,10 @@ struct Numbered: ISO_9075.Dialect {
         #expect(ISO_9075.Literal.timestamp(Instant(secondsSinceUnixEpoch: -1)) == "1969-12-31 23:59:59.000")
     }
 }
+
+@Suite struct `Debug descriptions` {
+    @Test func `a fragment describes itself with its values inlined`() {
+        let fragment: ISO_9075.Fragment = "SELECT \(ISO_9075.Identifier("title")) WHERE \(quote: "id") = \(.int(1)) AND \(quote: "tags") = \(.array([.text("a"), .null]))"
+        #expect(fragment.debugDescription == #"SELECT "title" WHERE "id" = 1 AND "tags" = ARRAY['a', NULL]"#)
+    }
+}
