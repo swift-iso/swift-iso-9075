@@ -30,6 +30,26 @@ extension ISO_9075 {
                 + padded(dateTime.nanoseconds / 1_000_000, 3)
         }
 
+        public static func instant(_ text: some StringProtocol) throws(Value.Failure) -> Instant {
+            let fields = text.split(whereSeparator: { " T-:.".contains($0) }).map { Int($0) }
+            guard fields.count >= 6, fields.allSatisfy({ $0 != nil }) else {
+                throw Value.Failure("\(text) is not a timestamp")
+            }
+            let values = fields.compactMap(\.self)
+            let days: Int
+            do throws(ISO_8601.CalendarDate.Error) {
+                days = try ISO_8601.CalendarDate(year: values[0], month: values[1], day: values[2]).daysSinceUnixEpoch
+            } catch {
+                throw Value.Failure(error)
+            }
+            let fraction = fields.count > 6 ? text.split(separator: ".").last.map { String($0.prefix(9)) } ?? "" : ""
+            return Instant(
+                _unchecked: (),
+                secondsSinceUnixEpoch: Int64(days) * 86_400 + Int64(values[3] * 3_600 + values[4] * 60 + values[5]),
+                nanosecondFraction: Int32((fraction + String(repeating: "0", count: 9 - fraction.count))) ?? 0
+            )
+        }
+
         private static func padded(_ value: some BinaryInteger, _ width: Int) -> String {
             let digits = String(value)
             return String(repeating: "0", count: max(0, width - digits.count)) + digits

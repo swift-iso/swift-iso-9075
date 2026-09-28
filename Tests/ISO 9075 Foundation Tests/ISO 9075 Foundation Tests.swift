@@ -65,6 +65,17 @@ struct Numbered: ISO_9075.Dialect {
         #expect(try ISO_9075.Literal.timestamp(Instant(secondsSinceUnixEpoch: 951_827_696, nanosecondFraction: 123_456_789)) == "2000-02-29 12:34:56.123")
     }
 
+    @Test func `a timestamp literal reads back as its instant`() throws {
+        let instant = try Instant(secondsSinceUnixEpoch: 951_827_696, nanosecondFraction: 123_000_000)
+        #expect(try ISO_9075.Literal.instant("2000-02-29 12:34:56.123") == instant)
+        #expect(try ISO_9075.Literal.instant("2000-02-29T12:34:56.123") == instant)
+        #expect(try ISO_9075.Literal.instant("1970-01-01 00:00:00") == Instant(secondsSinceUnixEpoch: 0))
+    }
+
+    @Test func `text that is not a timestamp is refused`() {
+        #expect(throws: ISO_9075.Value.Failure.self) { try ISO_9075.Literal.instant("yesterday") }
+    }
+
     @Test func `an instant before the epoch counts back`() throws {
         #expect(try ISO_9075.Literal.timestamp(Instant(secondsSinceUnixEpoch: -1)) == "1969-12-31 23:59:59.000")
     }
