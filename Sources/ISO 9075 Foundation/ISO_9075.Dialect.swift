@@ -3,6 +3,8 @@ extension ISO_9075 {
         func placeholder(_ offset: Int) -> String
         func literal(_ value: Value) throws(Value.Failure) -> String
         var defaultPrimaryKey: String { get }
+        var jsonBooleanOpen: String { get }
+        var jsonBooleanClose: String { get }
     }
 
     public struct Rendering: Hashable, Sendable {
@@ -19,9 +21,15 @@ extension ISO_9075 {
 extension ISO_9075.Dialect {
     public var defaultPrimaryKey: String { ISO_9075.Keyword.defaultPrimaryKey.standard }
 
+    public var jsonBooleanOpen: String { ISO_9075.Keyword.jsonBooleanOpen.standard }
+
+    public var jsonBooleanClose: String { ISO_9075.Keyword.jsonBooleanClose.standard }
+
     public func spelling(_ keyword: ISO_9075.Keyword) -> String {
         switch keyword {
         case .defaultPrimaryKey: defaultPrimaryKey
+        case .jsonBooleanOpen: jsonBooleanOpen
+        case .jsonBooleanClose: jsonBooleanClose
         }
     }
 

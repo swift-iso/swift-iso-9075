@@ -80,6 +80,8 @@ struct Numbered: ISO_9075.Dialect {
 struct Engine: ISO_9075.Dialect {
     func placeholder(_ offset: Int) -> String { "?" }
     var defaultPrimaryKey: String { "NULL" }
+    var jsonBooleanOpen: String { "json(CASE " }
+    var jsonBooleanClose: String { " WHEN 0 THEN 'false' WHEN 1 THEN 'true' END)" }
 }
 
 @Suite struct `Keywords` {
@@ -94,3 +96,16 @@ struct Engine: ISO_9075.Dialect {
         #expect(fragment.debugDescription == "VALUES (DEFAULT, 'Taxes')")
     }
 }
+
+@Suite struct `JSON booleans` {
+    let fragment: ISO_9075.Fragment = "\(ISO_9075.Keyword.jsonBooleanOpen)\(quote: "isDone")\(ISO_9075.Keyword.jsonBooleanClose)"
+
+    @Test func `the standard passes a boolean through`() {
+        #expect(fragment.debugDescription == #""isDone""#)
+    }
+
+    @Test func `a dialect without booleans converts one`() {
+        #expect(Engine().render(fragment).sql == #"json(CASE "isDone" WHEN 0 THEN 'false' WHEN 1 THEN 'true' END)"#)
+    }
+}
+
