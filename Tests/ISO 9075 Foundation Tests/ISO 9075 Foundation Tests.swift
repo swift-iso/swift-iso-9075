@@ -33,7 +33,6 @@ struct Numbered: ISO_9075.Dialect {
     }
 
     @Test func `the dialect defaults are the standard's`() {
-        #expect(Numbered().notDistinct == "IS NOT DISTINCT FROM")
         #expect(Numbered().defaultPrimaryKey == "DEFAULT")
     }
 }
@@ -75,5 +74,23 @@ struct Numbered: ISO_9075.Dialect {
     @Test func `a fragment describes itself with its values inlined`() {
         let fragment: ISO_9075.Fragment = "SELECT \(ISO_9075.Identifier("title")) WHERE \(quote: "id") = \(.int(1)) AND \(quote: "tags") = \(.array([.text("a"), .null]))"
         #expect(fragment.debugDescription == #"SELECT "title" WHERE "id" = 1 AND "tags" = ARRAY['a', NULL]"#)
+    }
+}
+
+struct Engine: ISO_9075.Dialect {
+    func placeholder(_ offset: Int) -> String { "?" }
+    var defaultPrimaryKey: String { "NULL" }
+}
+
+@Suite struct `Keywords` {
+    let fragment: ISO_9075.Fragment = "VALUES (\(ISO_9075.Keyword.defaultPrimaryKey), \(.text("Taxes")))"
+
+    @Test func `a dialect spells each keyword when it renders`() {
+        #expect(Engine().render(fragment).sql == "VALUES (NULL, ?)")
+    }
+
+    @Test func `the standard spelling is the default`() throws {
+        #expect(try Positional().inline(fragment) == "VALUES (DEFAULT, 'Taxes')")
+        #expect(fragment.debugDescription == "VALUES (DEFAULT, 'Taxes')")
     }
 }

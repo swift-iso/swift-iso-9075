@@ -4,6 +4,7 @@ extension ISO_9075 {
             case sql(String)
             case value(Value)
             case identifier(Identifier)
+            case keyword(Keyword)
         }
 
         public var segments: [Segment]
@@ -28,7 +29,7 @@ extension ISO_9075 {
             segments.allSatisfy { segment in
                 switch segment {
                 case .sql(let sql): sql.isEmpty
-                case .value, .identifier: false
+                case .value, .identifier, .keyword: false
                 }
             }
         }
@@ -88,7 +89,7 @@ extension ISO_9075.Fragment: ExpressibleByStringInterpolation {
             switch segment {
             case .sql(let sql):
                 buffer.append(sql)
-            case .value, .identifier:
+            case .value, .identifier, .keyword:
                 if !buffer.isEmpty {
                     segments.append(.sql(buffer))
                     buffer.removeAll(keepingCapacity: true)
@@ -121,6 +122,10 @@ extension ISO_9075.Fragment: ExpressibleByStringInterpolation {
             appendSegment(.identifier(identifier))
         }
 
+        public mutating func appendInterpolation(_ keyword: ISO_9075.Keyword) {
+            appendSegment(.keyword(keyword))
+        }
+
         public mutating func appendInterpolation(_ fragment: ISO_9075.Fragment) {
             for segment in fragment.segments {
                 appendSegment(segment)
@@ -136,6 +141,7 @@ extension ISO_9075.Fragment: CustomDebugStringConvertible {
             case .sql(let sql): sql
             case .value(let value): (try? value.literal) ?? "<invalid: \(value)>"
             case .identifier(let identifier): identifier.delimited
+            case .keyword(let keyword): keyword.standard
             }
         }
         .joined()
