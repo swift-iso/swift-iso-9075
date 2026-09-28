@@ -16,7 +16,7 @@ struct Row: ISO_9075.Row {
 }
 
 struct Recording: ISO_9075.Connection {
-    let dialect: any ISO_9075.Dialect = Numbered()
+    let dialect = Numbered()
     let rows: [Row]
 
     func execute(_ statement: ISO_9075.Rendering) async throws(ISO_9075.Error) -> Int {
@@ -25,7 +25,7 @@ struct Recording: ISO_9075.Connection {
 
     func fetchAll<Value: Sendable>(
         _ statement: ISO_9075.Rendering,
-        decode: (any ISO_9075.Row) throws(ISO_9075.Error) -> Value
+        decode: (Row) throws(ISO_9075.Error) -> Value
     ) async throws(ISO_9075.Error) -> [Value] {
         guard statement.sql == #"SELECT "title" FROM "reminders" WHERE "isCompleted" = $1"# else {
             throw .execution(statement.sql)

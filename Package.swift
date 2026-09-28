@@ -19,6 +19,7 @@ let package = Package(
         .package(url: "https://github.com/swift-atoms/swift-byte.git", branch: "main"),
         .package(url: "https://github.com/swift-atoms/swift-time.git", branch: "main"),
         .package(url: "https://github.com/swift-ietf/swift-rfc-4122.git", branch: "main"),
+        .package(url: "https://github.com/swift-iso/swift-iso-8601.git", branch: "main"),
     ],
     targets: [
         .target(
@@ -27,6 +28,7 @@ let package = Package(
                 .product(name: "Byte", package: "swift-byte"),
                 .product(name: "Time", package: "swift-time"),
                 .product(name: "RFC 4122", package: "swift-rfc-4122"),
+                .product(name: "ISO 8601", package: "swift-iso-8601"),
             ]
         ),
         .target(

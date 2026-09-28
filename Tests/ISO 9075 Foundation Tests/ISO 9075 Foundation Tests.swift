@@ -57,16 +57,16 @@ struct Numbered: ISO_9075.Dialect {
 }
 
 @Suite struct `Timestamp literals` {
-    @Test func `the epoch is midnight, the first of January 1970`() {
-        #expect(ISO_9075.Literal.timestamp(Instant(secondsSinceUnixEpoch: 0)) == "1970-01-01 00:00:00.000")
+    @Test func `the epoch is midnight, the first of January 1970`() throws {
+        #expect(try ISO_9075.Literal.timestamp(Instant(secondsSinceUnixEpoch: 0)) == "1970-01-01 00:00:00.000")
     }
 
     @Test func `a leap day keeps its milliseconds`() throws {
         #expect(try ISO_9075.Literal.timestamp(Instant(secondsSinceUnixEpoch: 951_827_696, nanosecondFraction: 123_456_789)) == "2000-02-29 12:34:56.123")
     }
 
-    @Test func `an instant before the epoch counts back`() {
-        #expect(ISO_9075.Literal.timestamp(Instant(secondsSinceUnixEpoch: -1)) == "1969-12-31 23:59:59.000")
+    @Test func `an instant before the epoch counts back`() throws {
+        #expect(try ISO_9075.Literal.timestamp(Instant(secondsSinceUnixEpoch: -1)) == "1969-12-31 23:59:59.000")
     }
 }
 

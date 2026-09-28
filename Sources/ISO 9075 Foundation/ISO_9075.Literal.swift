@@ -1,4 +1,5 @@
 public import Byte
+internal import ISO_8601
 public import Time
 
 extension ISO_9075 {
@@ -14,31 +15,24 @@ extension ISO_9075 {
             }.joined() + "'"
         }
 
-        public static func timestamp(_ instant: Instant) -> String {
-            let seconds = instant.secondsSinceUnixEpoch
-            let days = seconds.floorDivided(by: 86_400)
-            let time = seconds - days * 86_400
-            let era = (days + 719_468).floorDivided(by: 146_097)
-            let dayOfEra = days + 719_468 - era * 146_097
-            let yearOfEra = (dayOfEra - dayOfEra / 1_460 + dayOfEra / 36_524 - dayOfEra / 146_096) / 365
-            let dayOfYear = dayOfEra - (365 * yearOfEra + yearOfEra / 4 - yearOfEra / 100)
-            let shiftedMonth = (5 * dayOfYear + 2) / 153
-            let month = shiftedMonth < 10 ? shiftedMonth + 3 : shiftedMonth - 9
-            return padded(yearOfEra + era * 400 + (month <= 2 ? 1 : 0), 4) + "-" + padded(month, 2) + "-"
-                + padded(dayOfYear - (153 * shiftedMonth + 2) / 5 + 1, 2) + " " + padded(time / 3_600, 2) + ":"
-                + padded(time % 3_600 / 60, 2) + ":" + padded(time % 60, 2) + "."
-                + padded(instant.nanosecondFraction / 1_000_000, 3)
+        public static func timestamp(_ instant: Instant) throws(Value.Failure) -> String {
+            let dateTime: ISO_8601.DateTime
+            do throws(ISO_8601.DateTime.Error) {
+                dateTime = try ISO_8601.DateTime(
+                    Time.Instant(offset: .seconds(instant.secondsSinceUnixEpoch) + .nanoseconds(instant.nanosecondFraction))
+                )
+            } catch {
+                throw Value.Failure(error)
+            }
+            return padded(dateTime.date.year, 4) + "-" + padded(dateTime.date.month, 2) + "-"
+                + padded(dateTime.date.day, 2) + " " + padded(dateTime.hour, 2) + ":"
+                + padded(dateTime.minute, 2) + ":" + padded(dateTime.second, 2) + "."
+                + padded(dateTime.nanoseconds / 1_000_000, 3)
         }
 
         private static func padded(_ value: some BinaryInteger, _ width: Int) -> String {
             let digits = String(value)
             return String(repeating: "0", count: max(0, width - digits.count)) + digits
         }
-    }
-}
-
-extension Int64 {
-    fileprivate func floorDivided(by divisor: Int64) -> Int64 {
-        self / divisor - (self % divisor < 0 ? 1 : 0)
     }
 }

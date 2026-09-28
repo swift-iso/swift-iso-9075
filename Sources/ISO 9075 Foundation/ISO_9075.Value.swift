@@ -27,7 +27,7 @@ extension ISO_9075.Value {
             self.description = description
         }
 
-        public init(_ error: any Error) {
+        public init(_ error: some Error) {
             self.description = String(describing: error)
         }
     }
@@ -45,7 +45,7 @@ extension ISO_9075.Value {
             case .text(let text): ISO_9075.Literal.character(text)
             case .blob(let bytes): ISO_9075.Literal.binary(bytes)
             case .json(let bytes): ISO_9075.Literal.character(String(decoding: bytes.map(\.underlying), as: UTF8.self))
-            case .timestamp(let instant): "TIMESTAMP " + ISO_9075.Literal.character(ISO_9075.Literal.timestamp(instant))
+            case .timestamp(let instant): "TIMESTAMP " + ISO_9075.Literal.character(try ISO_9075.Literal.timestamp(instant))
             case .uuid(let uuid): ISO_9075.Literal.character(String(uuid).lowercased())
             case .array(let values): "ARRAY[" + (try values.map { value throws(Failure) in try value.literal }).joined(separator: ", ") + "]"
             case .invalid(let failure): throw failure
