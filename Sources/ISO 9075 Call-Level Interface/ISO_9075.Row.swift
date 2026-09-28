@@ -1,5 +1,5 @@
 extension ISO_9075 {
-    public protocol Row: Sendable {
+    public protocol Row {
         var columns: [String] { get }
         func value(at index: Int) throws(ISO_9075.Error) -> Value
     }
