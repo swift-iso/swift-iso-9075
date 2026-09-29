@@ -3,6 +3,13 @@ extension ISO_9075 {
         case defaultPrimaryKey
         case jsonBooleanOpen
         case jsonBooleanClose
+        case unboundedLimit
+        case roundOpen
+        case roundClose
+        case roundOperandOpen
+        case roundOperandClose
+        case roundPrecisionOpen
+        case roundPrecisionClose
     }
 }
 
@@ -10,7 +17,10 @@ extension ISO_9075.Keyword {
     public var standard: String {
         switch self {
         case .defaultPrimaryKey: "DEFAULT"
-        case .jsonBooleanOpen, .jsonBooleanClose: ""
+        case .unboundedLimit: "ALL"
+        case .jsonBooleanOpen, .jsonBooleanClose, .roundOpen, .roundClose, .roundOperandOpen, .roundOperandClose,
+            .roundPrecisionOpen, .roundPrecisionClose:
+            ""
         }
     }
 }

@@ -83,7 +83,7 @@ struct Numbered: ISO_9075.Dialect {
 
 @Suite struct `Debug descriptions` {
     @Test func `a fragment describes itself with its values inlined`() {
-        let fragment: ISO_9075.Fragment = "SELECT \(ISO_9075.Identifier("title")) WHERE \(quote: "id") = \(.int(1)) AND \(quote: "tags") = \(.array([.text("a"), .null]))"
+        let fragment: ISO_9075.Fragment = "SELECT \(ISO_9075.Identifier("title")) WHERE \(quote: "id") = \(.int(1)) AND \(quote: "tags") = \(.array([.text("a"), .null], of: .text))"
         #expect(fragment.debugDescription == #"SELECT "title" WHERE "id" = 1 AND "tags" = ARRAY['a', NULL]"#)
     }
 }
@@ -93,6 +93,13 @@ struct Engine: ISO_9075.Dialect {
     var defaultPrimaryKey: String { "NULL" }
     var jsonBooleanOpen: String { "json(CASE " }
     var jsonBooleanClose: String { " WHEN 0 THEN 'false' WHEN 1 THEN 'true' END)" }
+    var unboundedLimit: String { "-1" }
+    var roundOpen: String { "CAST(" }
+    var roundClose: String { " AS DOUBLE PRECISION)" }
+    var roundOperandOpen: String { "CAST(" }
+    var roundOperandClose: String { " AS NUMERIC)" }
+    var roundPrecisionOpen: String { "CAST(" }
+    var roundPrecisionClose: String { " AS INTEGER)" }
 }
 
 @Suite struct `Keywords` {
@@ -120,3 +127,38 @@ struct Engine: ISO_9075.Dialect {
     }
 }
 
+
+@Suite struct `Unbounded limits` {
+    let fragment: ISO_9075.Fragment = "LIMIT \(ISO_9075.Keyword.unboundedLimit) OFFSET \(.int(10))"
+
+    @Test func `the standard spells an unbounded limit ALL`() {
+        #expect(Positional().render(fragment).sql == "LIMIT ALL OFFSET ?")
+        #expect(fragment.debugDescription == "LIMIT ALL OFFSET 10")
+    }
+
+    @Test func `a dialect spells its own unbounded limit`() {
+        #expect(Engine().render(fragment).sql == "LIMIT -1 OFFSET ?")
+    }
+}
+
+@Suite struct `Rounding` {
+    let fragment: ISO_9075.Fragment = "\(ISO_9075.Keyword.roundOpen)round(\(ISO_9075.Keyword.roundOperandOpen)\(quote: "value")\(ISO_9075.Keyword.roundOperandClose), \(ISO_9075.Keyword.roundPrecisionOpen)\(.int(2))\(ISO_9075.Keyword.roundPrecisionClose))\(ISO_9075.Keyword.roundClose)"
+
+    @Test func `the standard rounds the operand as it is`() {
+        #expect(Positional().render(fragment).sql == #"round("value", ?)"#)
+    }
+
+    @Test func `a dialect converts the operand, the precision and the result`() {
+        #expect(Engine().render(fragment).sql == #"CAST(round(CAST("value" AS NUMERIC), CAST(? AS INTEGER)) AS DOUBLE PRECISION)"#)
+    }
+}
+
+@Suite struct `Arrays` {
+    @Test func `an array carries its element kind`() {
+        #expect(ISO_9075.Value.array([], of: .int) != ISO_9075.Value.array([], of: .text))
+    }
+
+    @Test func `an empty array is an empty standard literal`() throws {
+        #expect(try ISO_9075.Value.array([], of: .int).literal == "ARRAY[]")
+    }
+}

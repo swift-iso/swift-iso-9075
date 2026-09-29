@@ -14,8 +14,22 @@ extension ISO_9075 {
         case uuid(RFC_4122.UUID)
         case decimal(String)
         case json([Byte])
-        indirect case array([Value])
+        indirect case array([Value], of: Kind)
         case invalid(Failure)
+    }
+}
+
+extension ISO_9075.Value {
+    public enum Kind: Hashable, Sendable {
+        case bool
+        case int
+        case double
+        case text
+        case blob
+        case timestamp
+        case uuid
+        case decimal
+        case json
     }
 }
 
@@ -47,7 +61,7 @@ extension ISO_9075.Value {
             case .json(let bytes): ISO_9075.Literal.character(String(decoding: bytes.map(\.underlying), as: UTF8.self))
             case .timestamp(let instant): "TIMESTAMP " + ISO_9075.Literal.character(try ISO_9075.Literal.timestamp(instant))
             case .uuid(let uuid): ISO_9075.Literal.character(String(uuid).lowercased())
-            case .array(let values): "ARRAY[" + (try values.map { value throws(Failure) in try value.literal }).joined(separator: ", ") + "]"
+            case .array(let values, _): "ARRAY[" + (try values.map { value throws(Failure) in try value.literal }).joined(separator: ", ") + "]"
             case .invalid(let failure): throw failure
             }
         }

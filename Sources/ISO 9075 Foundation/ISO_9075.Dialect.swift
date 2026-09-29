@@ -5,6 +5,13 @@ extension ISO_9075 {
         var defaultPrimaryKey: String { get }
         var jsonBooleanOpen: String { get }
         var jsonBooleanClose: String { get }
+        var unboundedLimit: String { get }
+        var roundOpen: String { get }
+        var roundClose: String { get }
+        var roundOperandOpen: String { get }
+        var roundOperandClose: String { get }
+        var roundPrecisionOpen: String { get }
+        var roundPrecisionClose: String { get }
     }
 
     public struct Rendering: Hashable, Sendable {
@@ -25,11 +32,32 @@ extension ISO_9075.Dialect {
 
     public var jsonBooleanClose: String { ISO_9075.Keyword.jsonBooleanClose.standard }
 
+    public var unboundedLimit: String { ISO_9075.Keyword.unboundedLimit.standard }
+
+    public var roundOpen: String { ISO_9075.Keyword.roundOpen.standard }
+
+    public var roundClose: String { ISO_9075.Keyword.roundClose.standard }
+
+    public var roundOperandOpen: String { ISO_9075.Keyword.roundOperandOpen.standard }
+
+    public var roundOperandClose: String { ISO_9075.Keyword.roundOperandClose.standard }
+
+    public var roundPrecisionOpen: String { ISO_9075.Keyword.roundPrecisionOpen.standard }
+
+    public var roundPrecisionClose: String { ISO_9075.Keyword.roundPrecisionClose.standard }
+
     public func spelling(_ keyword: ISO_9075.Keyword) -> String {
         switch keyword {
         case .defaultPrimaryKey: defaultPrimaryKey
         case .jsonBooleanOpen: jsonBooleanOpen
         case .jsonBooleanClose: jsonBooleanClose
+        case .unboundedLimit: unboundedLimit
+        case .roundOpen: roundOpen
+        case .roundClose: roundClose
+        case .roundOperandOpen: roundOperandOpen
+        case .roundOperandClose: roundOperandClose
+        case .roundPrecisionOpen: roundPrecisionOpen
+        case .roundPrecisionClose: roundPrecisionClose
         }
     }
 
