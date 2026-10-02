@@ -29,22 +29,36 @@ extension ISO_9075 {
         }
 
         public static func instant(_ text: some StringProtocol) throws(Value.Failure) -> Time.Instant {
-            let fields = text.split(whereSeparator: { " T-:.".contains($0) }).map { Int($0) }
-            guard fields.count >= 6, fields.allSatisfy({ $0 != nil }) else {
+            let fields = text.split(omittingEmptySubsequences: false, whereSeparator: { " T-:.".contains($0) })
+            guard fields.count == 6 || fields.count == 7,
+                fields.allSatisfy({ !$0.isEmpty && $0.utf8.allSatisfy { (0x30...0x39).contains($0) } })
+            else {
                 throw Value.Failure("\(text) is not a timestamp")
             }
-            let values = fields.compactMap(\.self)
+            let values = fields.prefix(6).compactMap { Int($0) }
+            guard values.count == 6,
+                (0...23).contains(values[3]),
+                (0...59).contains(values[4]),
+                (0...59).contains(values[5])
+            else {
+                throw Value.Failure("\(text) is not a timestamp")
+            }
             let days: Int
             do throws(ISO_8601.CalendarDate.Error) {
                 days = try ISO_8601.CalendarDate(year: values[0], month: values[1], day: values[2]).daysSinceUnixEpoch
             } catch {
                 throw Value.Failure(error)
             }
-            let fraction = fields.count > 6 ? text.split(separator: ".").last.map { String($0.prefix(9)) } ?? "" : ""
+            let (daySeconds, dayOverflow) = Int64(days).multipliedReportingOverflow(by: 86_400)
+            let (seconds, secondOverflow) = daySeconds.addingReportingOverflow(Int64(values[3] * 3_600 + values[4] * 60 + values[5]))
+            guard !dayOverflow, !secondOverflow else {
+                throw Value.Failure("\(text) is out of range")
+            }
+            let fraction = fields.count == 7 ? String(fields[6].prefix(9)) : ""
             return Time.Instant(
                 _unchecked: (),
-                secondsSinceUnixEpoch: Int64(days) * 86_400 + Int64(values[3] * 3_600 + values[4] * 60 + values[5]),
-                nanosecondFraction: Int32((fraction + String(repeating: "0", count: 9 - fraction.count))) ?? 0
+                secondsSinceUnixEpoch: seconds,
+                nanosecondFraction: Int32(fraction + String(repeating: "0", count: 9 - fraction.count)) ?? 0
             )
         }
 

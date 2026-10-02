@@ -76,6 +76,28 @@ struct Numbered: ISO_9075.Dialect {
         #expect(throws: ISO_9075.Value.Failure.self) { try ISO_9075.Literal.instant("yesterday") }
     }
 
+    @Test(arguments: [
+        "2000-02-29 24:00:00",
+        "2000-02-29 23:60:00",
+        "2000-02-29 23:59:60",
+        "2000-02-29 -1:00:00",
+        "+2000-02-29 12:34:56",
+        "2000-02-29 +1:00:00",
+        "2000-02-29 12:34:56.123 7",
+        "2000-02-29 12:34",
+        "2000-02-29 1\u{0662}:34:56",
+        "2000-02-29 12:34:56.12x",
+        "2000-02-29 99999999999999999:00:00",
+        "99999999999999-01-01 00:00:00",
+    ])
+    func `a timestamp with an out-of-range, signed, non-digit or extra field is refused`(_ text: String) {
+        #expect(throws: ISO_9075.Value.Failure.self) { try ISO_9075.Literal.instant(text) }
+    }
+
+    @Test func `the last second of a day and a nine-digit fraction read back`() throws {
+        #expect(try ISO_9075.Literal.instant("1970-01-01 23:59:59.999999999") == Time.Instant(secondsSinceUnixEpoch: 86_399, nanosecondFraction: 999_999_999))
+    }
+
     @Test func `an instant before the epoch counts back`() throws {
         #expect(try ISO_9075.Literal.timestamp(Time.Instant(secondsSinceUnixEpoch: -1)) == "1969-12-31 23:59:59.000")
     }
