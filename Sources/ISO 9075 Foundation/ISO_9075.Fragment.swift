@@ -24,27 +24,29 @@ extension ISO_9075 {
         public init(quote name: String) {
             self.segments = [.sql(Identifier(name).delimited)]
         }
+    }
+}
 
-        public var isEmpty: Bool {
-            segments.allSatisfy { segment in
-                switch segment {
-                case .sql(let sql): sql.isEmpty
-                case .value, .identifier, .keyword: false
-                }
+extension ISO_9075.Fragment {
+    public var isEmpty: Bool {
+        segments.allSatisfy { segment in
+            switch segment {
+            case .sql(let sql): sql.isEmpty
+            case .value, .identifier, .keyword: false
             }
         }
+    }
 
-        public mutating func append(_ other: Self) {
-            segments.append(contentsOf: other.segments)
-        }
+    public mutating func append(_ other: Self) {
+        segments.append(contentsOf: other.segments)
+    }
 
-        public static func += (lhs: inout Self, rhs: Self) {
-            lhs.append(rhs)
-        }
+    public static func += (lhs: inout Self, rhs: Self) {
+        lhs.append(rhs)
+    }
 
-        public static func + (lhs: Self, rhs: Self) -> Self {
-            Self(segments: lhs.segments + rhs.segments)
-        }
+    public static func + (lhs: Self, rhs: Self) -> Self {
+        Self(segments: lhs.segments + rhs.segments)
     }
 }
 

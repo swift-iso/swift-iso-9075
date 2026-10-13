@@ -33,36 +33,33 @@ let package = Package(
         ),
         .target(
             name: "ISO 9075 Call-Level Interface",
-            dependencies: ["ISO 9075 Foundation"]
+            dependencies: [.target(name: "ISO 9075 Foundation")]
         ),
         .testTarget(
             name: "ISO 9075 Foundation Tests",
             dependencies: [
-                "ISO 9075 Foundation",
+                .target(name: "ISO 9075 Foundation"),
                 .product(name: "Byte", package: "swift-byte"),
                 .product(name: "Time", package: "swift-time"),
             ]
         ),
         .testTarget(
             name: "ISO 9075 Call-Level Interface Tests",
-            dependencies: ["ISO 9075 Call-Level Interface"]
+            dependencies: [.target(name: "ISO 9075 Call-Level Interface")]
         ),
     ],
     swiftLanguageModes: [.v6]
 )
 
 for target in package.targets where ![.system, .binary, .plugin, .macro].contains(target.type) {
-    let ecosystem: [SwiftSetting] = [
+    target.swiftSettings = (target.swiftSettings ?? []) + [
         .strictMemorySafety(),
         .enableUpcomingFeature("ExistentialAny"),
         .enableUpcomingFeature("InternalImportsByDefault"),
         .enableUpcomingFeature("MemberImportVisibility"),
         .enableUpcomingFeature("NonisolatedNonsendingByDefault"),
-        .enableExperimentalFeature("Lifetimes"),
         .enableUpcomingFeature("InferIsolatedConformances"),
+        .enableExperimentalFeature("Lifetimes"),
+        .treatAllWarnings(as: .error),
     ]
-
-    let package: [SwiftSetting] = []
-
-    target.swiftSettings = (target.swiftSettings ?? []) + ecosystem + package
 }

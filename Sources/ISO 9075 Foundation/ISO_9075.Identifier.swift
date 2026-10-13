@@ -7,9 +7,11 @@ extension ISO_9075 {
             self.name = name
             self.key = key
         }
+    }
+}
 
-        public var delimited: String {
-            "\"" + name.replacing("\"", with: "\"\"") + "\""
-        }
+extension ISO_9075.Identifier {
+    public var delimited: String {
+        "\"" + name.replacing("\"", with: "\"\"") + "\""
     }
 }
