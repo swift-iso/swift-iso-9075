@@ -1,7 +1,7 @@
 import Byte
-import Time
 import ISO_9075_Foundation
 import Testing
+import Time
 
 struct Positional: ISO_9075.Dialect {
     func placeholder(_ offset: Int) -> String { "?" }
@@ -15,10 +15,13 @@ struct Numbered: ISO_9075.Dialect {
     let fragment: ISO_9075.Fragment = "SELECT \(quote: "title") FROM \(ISO_9075.Identifier("reminders")) WHERE \(quote: "isCompleted") = \(.bool(true)) AND \(quote: "title") <> \(.text("Taxes"))"
 
     @Test func `values become placeholders in order, per the dialect`() {
-        #expect(Positional().render(fragment) == ISO_9075.Rendering(
-            sql: #"SELECT "title" FROM "reminders" WHERE "isCompleted" = ? AND "title" <> ?"#,
-            values: [.bool(true), .text("Taxes")]
-        ))
+        #expect(
+            Positional().render(fragment)
+                == ISO_9075.Rendering(
+                    sql: #"SELECT "title" FROM "reminders" WHERE "isCompleted" = ? AND "title" <> ?"#,
+                    values: [.bool(true), .text("Taxes")]
+                )
+        )
         #expect(Numbered().render(fragment).sql == #"SELECT "title" FROM "reminders" WHERE "isCompleted" = $1 AND "title" <> $2"#)
     }
 
@@ -149,7 +152,6 @@ struct Engine: ISO_9075.Dialect {
     }
 }
 
-
 @Suite struct `Unbounded limits` {
     let fragment: ISO_9075.Fragment = "LIMIT \(ISO_9075.Keyword.unboundedLimit) OFFSET \(.int(10))"
 
@@ -164,7 +166,8 @@ struct Engine: ISO_9075.Dialect {
 }
 
 @Suite struct `Rounding` {
-    let fragment: ISO_9075.Fragment = "\(ISO_9075.Keyword.roundOpen)round(\(ISO_9075.Keyword.roundOperandOpen)\(quote: "value")\(ISO_9075.Keyword.roundOperandClose), \(ISO_9075.Keyword.roundPrecisionOpen)\(.int(2))\(ISO_9075.Keyword.roundPrecisionClose))\(ISO_9075.Keyword.roundClose)"
+    let fragment: ISO_9075.Fragment =
+        "\(ISO_9075.Keyword.roundOpen)round(\(ISO_9075.Keyword.roundOperandOpen)\(quote: "value")\(ISO_9075.Keyword.roundOperandClose), \(ISO_9075.Keyword.roundPrecisionOpen)\(.int(2))\(ISO_9075.Keyword.roundPrecisionClose))\(ISO_9075.Keyword.roundClose)"
 
     @Test func `the standard rounds the operand as it is`() {
         #expect(Positional().render(fragment).sql == #"round("value", ?)"#)

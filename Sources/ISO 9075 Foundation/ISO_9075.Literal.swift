@@ -64,9 +64,10 @@ extension ISO_9075.Literal {
     }
 
     public static func binary(_ bytes: [Byte]) -> String {
-        "X'" + bytes.map { byte in
-            let hex = String(byte.underlying, radix: 16, uppercase: true)
-            return hex.count == 1 ? "0" + hex : hex
-        }.joined() + "'"
+        "X'"
+            + bytes.map { byte in
+                let hex = String(byte.underlying, radix: 16, uppercase: true)
+                return hex.count == 1 ? "0" + hex : hex
+            }.joined() + "'"
     }
 }

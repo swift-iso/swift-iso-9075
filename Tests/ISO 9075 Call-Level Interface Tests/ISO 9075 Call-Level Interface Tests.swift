@@ -57,7 +57,6 @@ struct Recording: ISO_9075.Connection {
     }
 }
 
-
 actor Journal: ISO_9075.Database {
     private(set) var committed: [String] = []
 
