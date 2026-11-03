@@ -1,0 +1,18 @@
+# swift-iso-9075
+
+Use this package to hold a SQL statement as an engine-neutral `ISO_9075.Fragment` (raw SQL mixed with bound `ISO_9075.Value`s, delimited `ISO_9075.Identifier`s and dialect-spelled `ISO_9075.Keyword`s), to turn it into SQL plus bindings for one engine through an `ISO_9075.Dialect`, or to write ISO 9075 literals with `ISO_9075.Literal`. The Call-Level Interface library adds the protocols an engine implements, `ISO_9075.Connection`, `ISO_9075.Row` and `ISO_9075.Database`, so code can run fragments without naming the engine. For typed query building or a concrete engine, use the packages that build on this one (swift-sql, swift-sqlite, swift-postgresql).
+
+## Laws
+
+- Fragments concatenate by appending segments: `ISO_9075.Fragment()` is the identity, and `joined(separator:)` puts the separator only between elements. A fragment `isEmpty` exactly when every segment is empty raw SQL.
+- In an interpolated fragment, literal text and the `raw:`, `quote:` and `text:` interpolations become raw SQL at once: `quote:` is a delimited identifier and `text:` is an inline character literal, never a bound value. Only an interpolated `ISO_9075.Value`, `ISO_9075.Identifier`, `ISO_9075.Keyword` or the segments of an interpolated fragment stay separate until rendering.
+- `render` replaces each value, left to right, with `placeholder(n)` for its 1-based position `n` and returns the values in that order. It never throws: an `ISO_9075.Value.invalid` is passed on as a binding.
+- `inline` writes each value with the dialect's `literal`, which defaults to the standard literal, and throws the first value that has none (`ISO_9075.Value.invalid`). `debugDescription` always uses the standard spellings and shows such a value as `<invalid: …>` instead of throwing.
+- A keyword is spelled by the dialect when rendered or inlined. The standard spells `defaultPrimaryKey` as `DEFAULT` and `unboundedLimit` as `ALL`; every opening and closing keyword (`jsonBooleanOpen`, `roundOpen` and the rest) is empty, so the standard passes the wrapped expression through unchanged and a dialect fills the pair to convert it.
+- Delimiters are escaped by doubling: `"` inside an identifier, `'` inside a character literal.
+- Standard literals: booleans are `TRUE`/`FALSE`, binary data is `X'…'` in uppercase hexadecimal, JSON is a character literal of its UTF-8 text, a UUID is a lowercase character literal, a decimal is written as given, and an array is `ARRAY[…]` whatever its element kind (`ARRAY[]` when empty). The element kind still distinguishes otherwise equal arrays.
+- A timestamp literal is year-month-day, a space, hour:minute:second and three fractional digits (`1970-01-01 00:00:00.000`), truncated (not rounded) to milliseconds; instants before the epoch count back.
+- `ISO_9075.Literal.instant` reads six or seven fields of ASCII digits separated by any of space, `T`, `-`, `:` or `.`. The hour must be 0–23 and the minute and second 0–59 (no leap second); the date must be a valid calendar date; the fraction keeps at most nine digits and pads on the right. Signs, other digits, missing or extra fields and results that overflow are refused.
+- `ISO_9075.Identifier` equality includes its `key`; the key never affects the SQL.
+- `fetchOne` fetches every row and returns the first; it adds no `LIMIT`. `value(named:)` reads the first column with that name and fails with a decoding error when there is none.
+- A `ISO_9075.Database` implementation commits everything a `write` scope ran only when the scope returns, and nothing when it throws; a `withRollback` scope never commits; a `read` scope sees committed work. `execute` on the database runs in a `write` scope.
