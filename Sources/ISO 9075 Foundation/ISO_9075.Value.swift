@@ -20,31 +20,9 @@ extension ISO_9075 {
 }
 
 extension ISO_9075.Value {
-    public enum Kind: Hashable, Sendable {
-        case bool
-        case int
-        case double
-        case text
-        case blob
-        case timestamp
-        case uuid
-        case decimal
-        case json
-    }
 }
 
 extension ISO_9075.Value {
-    public struct Failure: Hashable, Sendable, Swift.Error {
-        public let description: String
-
-        public init(_ description: String) {
-            self.description = description
-        }
-
-        public init(_ error: some Swift.Error) {
-            self.description = String(describing: error)
-        }
-    }
 }
 
 extension ISO_9075.Value {
