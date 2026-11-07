@@ -34,14 +34,14 @@ extension ISO_9075.Value {
 }
 
 extension ISO_9075.Value {
-    public struct Failure: Hashable, Sendable, Error {
+    public struct Failure: Hashable, Sendable, Swift.Error {
         public let description: String
 
         public init(_ description: String) {
             self.description = description
         }
 
-        public init(_ error: some Error) {
+        public init(_ error: some Swift.Error) {
             self.description = String(describing: error)
         }
     }
