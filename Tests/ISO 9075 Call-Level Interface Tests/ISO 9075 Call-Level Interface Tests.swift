@@ -34,25 +34,29 @@ struct Recording: ISO_9075.Connection {
     }
 }
 
-@Suite struct `A connection executes rendered fragments` {
-    let connection = Recording(rows: [
-        Row(columns: ["title"], values: [.text("Groceries")]),
-        Row(columns: ["title"], values: [.text("Call mom")]),
-    ])
-    let fragment: ISO_9075.Fragment = #"SELECT "title" FROM "reminders" WHERE "isCompleted" = \#(.bool(true))"#
+enum `ISO 9075 Call-Level Interface Tests` {}
 
-    @Test func `rows are fetched through the connection's dialect`() throws {
-        let titles = try connection.fetchAll(fragment) { row throws(ISO_9075.Error) in try row.value(named: "title") }
-        #expect(titles == [.text("Groceries"), .text("Call mom")])
-    }
+extension `ISO 9075 Call-Level Interface Tests` {
+    @Suite struct `A connection executes rendered fragments` {
+        let connection = Recording(rows: [
+            Row(columns: ["title"], values: [.text("Groceries")]),
+            Row(columns: ["title"], values: [.text("Call mom")]),
+        ])
+        let fragment: ISO_9075.Fragment = #"SELECT "title" FROM "reminders" WHERE "isCompleted" = \#(.bool(true))"#
 
-    @Test func `fetching one returns the first row`() throws {
-        #expect(try connection.fetchOne(fragment) { row throws(ISO_9075.Error) in try row.value(at: 0) } == .text("Groceries"))
-    }
+        @Test func `rows are fetched through the connection's dialect`() throws {
+            let titles = try connection.fetchAll(fragment) { row throws(ISO_9075.Error) in try row.value(named: "title") }
+            #expect(titles == [.text("Groceries"), .text("Call mom")])
+        }
 
-    @Test func `a missing column is a decoding error`() throws {
-        #expect(throws: ISO_9075.Error.decoding("no column named body")) {
-            try connection.fetchAll(fragment) { row throws(ISO_9075.Error) in try row.value(named: "body") }
+        @Test func `fetching one returns the first row`() throws {
+            #expect(try connection.fetchOne(fragment) { row throws(ISO_9075.Error) in try row.value(at: 0) } == .text("Groceries"))
+        }
+
+        @Test func `a missing column is a decoding error`() throws {
+            #expect(throws: ISO_9075.Error.decoding("no column named body")) {
+                try connection.fetchAll(fragment) { row throws(ISO_9075.Error) in try row.value(named: "body") }
+            }
         }
     }
 }
@@ -101,40 +105,42 @@ actor Journal: ISO_9075.Database {
     }
 }
 
-@Suite struct `A database scopes synchronous connection work` {
-    @Test func `a write scope commits every statement it ran`() async throws {
-        let journal = Journal()
-        try await journal.write { connection throws(ISO_9075.Error) in
-            _ = try connection.execute("INSERT INTO \"a\" VALUES (\(.int(1)))")
-            _ = try connection.execute("INSERT INTO \"b\" VALUES (\(.int(2)))")
-        }
-        #expect(await journal.committed == [#"INSERT INTO "a" VALUES ($1)"#, #"INSERT INTO "b" VALUES ($1)"#])
-    }
-
-    @Test func `a failing write scope commits nothing`() async throws {
-        let journal = Journal()
-        await #expect(throws: ISO_9075.Error.execution("stop")) {
+extension `ISO 9075 Call-Level Interface Tests` {
+    @Suite struct `A database scopes synchronous connection work` {
+        @Test func `a write scope commits every statement it ran`() async throws {
+            let journal = Journal()
             try await journal.write { connection throws(ISO_9075.Error) in
-                _ = try connection.execute("DELETE FROM \"a\"")
-                throw .execution("stop")
+                _ = try connection.execute("INSERT INTO \"a\" VALUES (\(.int(1)))")
+                _ = try connection.execute("INSERT INTO \"b\" VALUES (\(.int(2)))")
             }
+            #expect(await journal.committed == [#"INSERT INTO "a" VALUES ($1)"#, #"INSERT INTO "b" VALUES ($1)"#])
         }
-        #expect(await journal.committed.isEmpty)
-    }
 
-    @Test func `a rollback scope leaves the database untouched`() async throws {
-        let journal = Journal()
-        let count = try await journal.withRollback { connection throws(ISO_9075.Error) in try connection.execute("DELETE FROM \"a\"") }
-        #expect(count == 1)
-        #expect(await journal.committed.isEmpty)
-    }
-
-    @Test func `a read scope sees committed statements`() async throws {
-        let journal = Journal()
-        _ = try await journal.execute("DELETE FROM \"a\"")
-        let seen = try await journal.read { connection throws(ISO_9075.Error) in
-            try connection.fetchAll("SELECT 1") { row throws(ISO_9075.Error) in try row.value(named: "sql") }
+        @Test func `a failing write scope commits nothing`() async throws {
+            let journal = Journal()
+            await #expect(throws: ISO_9075.Error.execution("stop")) {
+                try await journal.write { connection throws(ISO_9075.Error) in
+                    _ = try connection.execute("DELETE FROM \"a\"")
+                    throw .execution("stop")
+                }
+            }
+            #expect(await journal.committed.isEmpty)
         }
-        #expect(seen == [.text(#"DELETE FROM "a""#)])
+
+        @Test func `a rollback scope leaves the database untouched`() async throws {
+            let journal = Journal()
+            let count = try await journal.withRollback { connection throws(ISO_9075.Error) in try connection.execute("DELETE FROM \"a\"") }
+            #expect(count == 1)
+            #expect(await journal.committed.isEmpty)
+        }
+
+        @Test func `a read scope sees committed statements`() async throws {
+            let journal = Journal()
+            _ = try await journal.execute("DELETE FROM \"a\"")
+            let seen = try await journal.read { connection throws(ISO_9075.Error) in
+                try connection.fetchAll("SELECT 1") { row throws(ISO_9075.Error) in try row.value(named: "sql") }
+            }
+            #expect(seen == [.text(#"DELETE FROM "a""#)])
+        }
     }
 }
