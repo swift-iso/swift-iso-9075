@@ -1,6 +1,6 @@
-public import Byte
-public import RFC_4122
-public import Time
+import Byte
+import RFC_4122
+import Time
 
 
 extension ISO_9075.Value {
