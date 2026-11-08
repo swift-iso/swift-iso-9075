@@ -1,12 +1,5 @@
 extension ISO_9075 {
     public struct Fragment: Hashable, Sendable {
-        public enum Segment: Hashable, Sendable {
-            case sql(String)
-            case value(Value)
-            case identifier(Identifier)
-            case keyword(Keyword)
-        }
-
         public var segments: [Segment]
 
         public init() {
@@ -24,6 +17,15 @@ extension ISO_9075 {
         public init(quote name: String) {
             self.segments = [.sql(Identifier(name).delimited)]
         }
+    }
+}
+
+extension ISO_9075.Fragment {
+    public enum Segment: Hashable, Sendable {
+        case sql(String)
+        case value(Value)
+        case identifier(Identifier)
+        case keyword(Keyword)
     }
 }
 
@@ -78,60 +80,62 @@ extension ISO_9075.Fragment: ExpressibleByStringInterpolation {
             segments.reserveCapacity(interpolationCount + 1)
             buffer.reserveCapacity(literalCapacity)
         }
+    }
+}
 
-        fileprivate var flushed: [ISO_9075.Fragment.Segment] {
-            buffer.isEmpty ? segments : segments + [.sql(buffer)]
-        }
+extension ISO_9075.Fragment.StringInterpolation {
+    fileprivate var flushed: [ISO_9075.Fragment.Segment] {
+        buffer.isEmpty ? segments : segments + [.sql(buffer)]
+    }
 
-        public mutating func appendLiteral(_ literal: String) {
-            buffer.append(literal)
-        }
+    public mutating func appendLiteral(_ literal: String) {
+        buffer.append(literal)
+    }
 
-        public mutating func appendSegment(_ segment: ISO_9075.Fragment.Segment) {
-            switch segment {
-            case .sql(let sql):
-                buffer.append(sql)
-            case .value, .identifier, .keyword:
-                if !buffer.isEmpty {
-                    segments.append(.sql(buffer))
-                    buffer.removeAll(keepingCapacity: true)
-                }
-                segments.append(segment)
+    public mutating func appendSegment(_ segment: ISO_9075.Fragment.Segment) {
+        switch segment {
+        case .sql(let sql):
+            buffer.append(sql)
+        case .value, .identifier, .keyword:
+            if !buffer.isEmpty {
+                segments.append(.sql(buffer))
+                buffer.removeAll(keepingCapacity: true)
             }
+            segments.append(segment)
         }
+    }
 
-        public mutating func appendInterpolation(raw sql: String) {
-            appendLiteral(sql)
-        }
+    public mutating func appendInterpolation(raw sql: String) {
+        appendLiteral(sql)
+    }
 
-        public mutating func appendInterpolation(raw sql: some LosslessStringConvertible) {
-            appendLiteral(sql.description)
-        }
+    public mutating func appendInterpolation(raw sql: some LosslessStringConvertible) {
+        appendLiteral(sql.description)
+    }
 
-        public mutating func appendInterpolation(quote name: String) {
-            appendLiteral(ISO_9075.Identifier(name).delimited)
-        }
+    public mutating func appendInterpolation(quote name: String) {
+        appendLiteral(ISO_9075.Identifier(name).delimited)
+    }
 
-        public mutating func appendInterpolation(text: String) {
-            appendLiteral("'" + text.replacing("'", with: "''") + "'")
-        }
+    public mutating func appendInterpolation(text: String) {
+        appendLiteral("'" + text.replacing("'", with: "''") + "'")
+    }
 
-        public mutating func appendInterpolation(_ value: ISO_9075.Value) {
-            appendSegment(.value(value))
-        }
+    public mutating func appendInterpolation(_ value: ISO_9075.Value) {
+        appendSegment(.value(value))
+    }
 
-        public mutating func appendInterpolation(_ identifier: ISO_9075.Identifier) {
-            appendSegment(.identifier(identifier))
-        }
+    public mutating func appendInterpolation(_ identifier: ISO_9075.Identifier) {
+        appendSegment(.identifier(identifier))
+    }
 
-        public mutating func appendInterpolation(_ keyword: ISO_9075.Keyword) {
-            appendSegment(.keyword(keyword))
-        }
+    public mutating func appendInterpolation(_ keyword: ISO_9075.Keyword) {
+        appendSegment(.keyword(keyword))
+    }
 
-        public mutating func appendInterpolation(_ fragment: ISO_9075.Fragment) {
-            for segment in fragment.segments {
-                appendSegment(segment)
-            }
+    public mutating func appendInterpolation(_ fragment: ISO_9075.Fragment) {
+        for segment in fragment.segments {
+            appendSegment(segment)
         }
     }
 }
