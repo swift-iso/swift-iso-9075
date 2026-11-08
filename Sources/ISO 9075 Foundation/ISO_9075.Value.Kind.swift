@@ -2,7 +2,6 @@ import Byte
 import RFC_4122
 import Time
 
-
 extension ISO_9075.Value {
     public enum Kind: Hashable, Sendable {
         case bool
