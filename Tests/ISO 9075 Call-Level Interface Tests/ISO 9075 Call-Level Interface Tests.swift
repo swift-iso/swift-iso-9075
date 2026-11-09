@@ -58,6 +58,12 @@ extension `ISO 9075 Call-Level Interface Tests` {
                 try connection.fetchAll(fragment) { row throws(ISO_9075.Error) in try row.value(named: "body") }
             }
         }
+
+        @Test func `an invalid value is a binding error`() {
+            #expect(throws: ISO_9075.Error.binding(ISO_9075.Value.Failure("unencodable"))) {
+                try connection.execute("DELETE FROM \"reminders\" WHERE \"id\" = \(.invalid(ISO_9075.Value.Failure("unencodable")))")
+            }
+        }
     }
 }
 

@@ -56,7 +56,7 @@ extension ISO_9075.Dialect {
         try value.literal
     }
 
-    public func render(_ fragment: ISO_9075.Fragment) -> ISO_9075.Rendering {
+    public func render(_ fragment: ISO_9075.Fragment) throws(ISO_9075.Value.Failure) -> ISO_9075.Rendering {
         var sql = ""
         var values: [ISO_9075.Value] = []
         for segment in fragment.segments {
@@ -66,7 +66,7 @@ extension ISO_9075.Dialect {
             case .identifier(let identifier):
                 sql.append(identifier.delimited)
             case .value(let value):
-                values.append(value)
+                values.append(try value.bindable)
                 sql.append(placeholder(values.count))
             case .keyword(let keyword):
                 sql.append(spelling(keyword))

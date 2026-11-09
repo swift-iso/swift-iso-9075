@@ -45,3 +45,17 @@ extension ISO_9075.Value {
         }
     }
 }
+
+extension ISO_9075.Value {
+    var bindable: Self {
+        get throws(Failure) {
+            switch self {
+            case .invalid(let failure): throw failure
+            case .array(let values, _):
+                for value in values { _ = try value.bindable }
+                return self
+            default: return self
+            }
+        }
+    }
+}

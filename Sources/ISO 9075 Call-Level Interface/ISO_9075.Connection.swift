@@ -16,14 +16,22 @@ extension ISO_9075 {
 
 extension ISO_9075.Connection {
     public func execute(_ fragment: ISO_9075.Fragment) throws(ISO_9075.Error) -> Int {
-        try execute(dialect.render(fragment))
+        try execute(rendering(fragment))
     }
 
     public func fetchAll<Value>(
         _ fragment: ISO_9075.Fragment,
         decode: (Row) throws(ISO_9075.Error) -> Value
     ) throws(ISO_9075.Error) -> [Value] {
-        try fetchAll(dialect.render(fragment), decode: decode)
+        try fetchAll(rendering(fragment), decode: decode)
+    }
+
+    private func rendering(_ fragment: ISO_9075.Fragment) throws(ISO_9075.Error) -> ISO_9075.Rendering {
+        do {
+            return try dialect.render(fragment)
+        } catch {
+            throw .binding(error)
+        }
     }
 
     public func fetchOne<Value>(

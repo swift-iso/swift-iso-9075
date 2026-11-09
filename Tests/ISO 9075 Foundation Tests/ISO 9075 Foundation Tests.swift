@@ -17,15 +17,15 @@ extension `ISO 9075 Foundation Tests` {
     @Suite struct `Rendering a fragment` {
         let fragment: ISO_9075.Fragment = "SELECT \(quote: "title") FROM \(ISO_9075.Identifier("reminders")) WHERE \(quote: "isCompleted") = \(.bool(true)) AND \(quote: "title") <> \(.text("Taxes"))"
 
-        @Test func `values become placeholders in order, per the dialect`() {
+        @Test func `values become placeholders in order, per the dialect`() throws {
             #expect(
-                Positional().render(fragment)
+                try Positional().render(fragment)
                     == ISO_9075.Rendering(
                         sql: #"SELECT "title" FROM "reminders" WHERE "isCompleted" = ? AND "title" <> ?"#,
                         values: [.bool(true), .text("Taxes")]
                     )
             )
-            #expect(Numbered().render(fragment).sql == #"SELECT "title" FROM "reminders" WHERE "isCompleted" = $1 AND "title" <> $2"#)
+            #expect(try Numbered().render(fragment).sql == #"SELECT "title" FROM "reminders" WHERE "isCompleted" = $1 AND "title" <> $2"#)
         }
 
         @Test func `inlining writes each value as a standard literal`() throws {
@@ -35,6 +35,18 @@ extension `ISO 9075 Foundation Tests` {
         @Test func `an invalid value cannot be inlined`() {
             #expect(throws: ISO_9075.Value.Failure("unencodable")) {
                 try Positional().inline("SELECT \(.invalid(ISO_9075.Value.Failure("unencodable")))")
+            }
+        }
+
+        @Test func `an invalid value cannot be rendered`() {
+            #expect(throws: ISO_9075.Value.Failure("unencodable")) {
+                try Positional().render("SELECT \(.invalid(ISO_9075.Value.Failure("unencodable")))")
+            }
+        }
+
+        @Test func `an array holding an invalid value cannot be rendered`() {
+            #expect(throws: ISO_9075.Value.Failure("unencodable")) {
+                try Positional().render("SELECT \(.array([.int(1), .invalid(ISO_9075.Value.Failure("unencodable"))], of: .int))")
             }
         }
 
@@ -58,9 +70,9 @@ extension `ISO 9075 Foundation Tests` {
             #expect(ISO_9075.Literal.binary([Byte(0x00), Byte(0xAB), Byte(0x0F)]) == "X'00AB0F'")
         }
 
-        @Test func `fragments join with a separator`() {
+        @Test func `fragments join with a separator`() throws {
             let joined = [ISO_9075.Fragment("a"), "b", "c"].joined(separator: ", ")
-            #expect(Positional().render(joined).sql == "a, b, c")
+            #expect(try Positional().render(joined).sql == "a, b, c")
         }
     }
 }
@@ -141,8 +153,8 @@ extension `ISO 9075 Foundation Tests` {
     @Suite struct `Keywords` {
         let fragment: ISO_9075.Fragment = "VALUES (\(ISO_9075.Keyword.defaultPrimaryKey), \(.text("Taxes")))"
 
-        @Test func `a dialect spells each keyword when it renders`() {
-            #expect(Engine().render(fragment).sql == "VALUES (NULL, ?)")
+        @Test func `a dialect spells each keyword when it renders`() throws {
+            #expect(try Engine().render(fragment).sql == "VALUES (NULL, ?)")
         }
 
         @Test func `the standard spelling is the default`() throws {
@@ -160,8 +172,8 @@ extension `ISO 9075 Foundation Tests` {
             #expect(fragment.debugDescription == #""isDone""#)
         }
 
-        @Test func `a dialect without booleans converts one`() {
-            #expect(Engine().render(fragment).sql == #"json(CASE "isDone" WHEN 0 THEN 'false' WHEN 1 THEN 'true' END)"#)
+        @Test func `a dialect without booleans converts one`() throws {
+            #expect(try Engine().render(fragment).sql == #"json(CASE "isDone" WHEN 0 THEN 'false' WHEN 1 THEN 'true' END)"#)
         }
     }
 }
@@ -170,13 +182,13 @@ extension `ISO 9075 Foundation Tests` {
     @Suite struct `Unbounded limits` {
         let fragment: ISO_9075.Fragment = "LIMIT \(ISO_9075.Keyword.unboundedLimit) OFFSET \(.int(10))"
 
-        @Test func `the standard spells an unbounded limit ALL`() {
-            #expect(Positional().render(fragment).sql == "LIMIT ALL OFFSET ?")
+        @Test func `the standard spells an unbounded limit ALL`() throws {
+            #expect(try Positional().render(fragment).sql == "LIMIT ALL OFFSET ?")
             #expect(fragment.debugDescription == "LIMIT ALL OFFSET 10")
         }
 
-        @Test func `a dialect spells its own unbounded limit`() {
-            #expect(Engine().render(fragment).sql == "LIMIT -1 OFFSET ?")
+        @Test func `a dialect spells its own unbounded limit`() throws {
+            #expect(try Engine().render(fragment).sql == "LIMIT -1 OFFSET ?")
         }
     }
 }
@@ -186,12 +198,12 @@ extension `ISO 9075 Foundation Tests` {
         let fragment: ISO_9075.Fragment =
             "\(ISO_9075.Keyword.roundOpen)round(\(ISO_9075.Keyword.roundOperandOpen)\(quote: "value")\(ISO_9075.Keyword.roundOperandClose), \(ISO_9075.Keyword.roundPrecisionOpen)\(.int(2))\(ISO_9075.Keyword.roundPrecisionClose))\(ISO_9075.Keyword.roundClose)"
 
-        @Test func `the standard rounds the operand as it is`() {
-            #expect(Positional().render(fragment).sql == #"round("value", ?)"#)
+        @Test func `the standard rounds the operand as it is`() throws {
+            #expect(try Positional().render(fragment).sql == #"round("value", ?)"#)
         }
 
-        @Test func `a dialect converts the operand, the precision and the result`() {
-            #expect(Engine().render(fragment).sql == #"CAST(round(CAST("value" AS NUMERIC), CAST(? AS INTEGER)) AS DOUBLE PRECISION)"#)
+        @Test func `a dialect converts the operand, the precision and the result`() throws {
+            #expect(try Engine().render(fragment).sql == #"CAST(round(CAST("value" AS NUMERIC), CAST(? AS INTEGER)) AS DOUBLE PRECISION)"#)
         }
     }
 }
