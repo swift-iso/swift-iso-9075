@@ -27,7 +27,7 @@ extension ISO_9075.Connection {
     }
 
     private func rendering(_ fragment: ISO_9075.Fragment) throws(ISO_9075.Error) -> ISO_9075.Rendering {
-        do {
+        do throws(ISO_9075.Value.Failure) {
             return try dialect.render(fragment)
         } catch {
             throw .binding(error)
