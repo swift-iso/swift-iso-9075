@@ -150,3 +150,24 @@ extension `ISO 9075 Call-Level Interface Tests` {
         }
     }
 }
+
+@Suite struct `A diagnostic` {
+    @Test func `a state is five digits or capital letters`() {
+        #expect(ISO_9075.Diagnostic.State(rawValue: "23505")?.rawValue == "23505")
+        #expect(ISO_9075.Diagnostic.State(rawValue: "23P01")?.rawValue == "23P01")
+        #expect(ISO_9075.Diagnostic.State(rawValue: "2350") == nil)
+        #expect(ISO_9075.Diagnostic.State(rawValue: "23p01") == nil)
+        #expect(ISO_9075.Diagnostic.State(rawValue: "235051") == nil)
+    }
+
+    @Test func `a state's class is its first two characters`() {
+        #expect(ISO_9075.Diagnostic.State(rawValue: "23505")?.class == "23")
+        #expect(ISO_9075.Diagnostic.State.integrityConstraintViolation.class == "23")
+    }
+
+    @Test func `an error reports the state of its diagnostic, and no state otherwise`() {
+        let diagnostic = ISO_9075.Diagnostic(state: .integrityConstraintViolation, native: 1555, message: "UNIQUE constraint failed")
+        #expect(ISO_9075.Error.diagnostic(diagnostic).state == .integrityConstraintViolation)
+        #expect(ISO_9075.Error.execution("no state").state == nil)
+    }
+}
