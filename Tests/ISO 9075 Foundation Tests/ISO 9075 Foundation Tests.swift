@@ -147,6 +147,7 @@ struct Engine: ISO_9075.Dialect {
     var roundOperandClose: String { " AS NUMERIC)" }
     var roundPrecisionOpen: String { "CAST(" }
     var roundPrecisionClose: String { " AS INTEGER)" }
+    var binaryLargeObject: String { "BYTEA" }
 }
 
 extension `ISO 9075 Foundation Tests` {
@@ -189,6 +190,20 @@ extension `ISO 9075 Foundation Tests` {
 
         @Test func `a dialect spells its own unbounded limit`() throws {
             #expect(try Engine().render(fragment).sql == "LIMIT -1 OFFSET ?")
+        }
+    }
+}
+
+extension `ISO 9075 Foundation Tests` {
+    @Suite struct `Binary large objects` {
+        let fragment: ISO_9075.Fragment = "CREATE TABLE \(quote: "files") (\(quote: "bytes") \(ISO_9075.Keyword.binaryLargeObject))"
+
+        @Test func `the standard spells the type BLOB`() throws {
+            #expect(try Positional().render(fragment).sql == #"CREATE TABLE "files" ("bytes" BLOB)"#)
+        }
+
+        @Test func `a dialect spells its own binary large object type`() throws {
+            #expect(try Engine().render(fragment).sql == #"CREATE TABLE "files" ("bytes" BYTEA)"#)
         }
     }
 }

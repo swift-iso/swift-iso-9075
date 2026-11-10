@@ -12,6 +12,7 @@ extension ISO_9075 {
         var roundOperandClose: String { get }
         var roundPrecisionOpen: String { get }
         var roundPrecisionClose: String { get }
+        var binaryLargeObject: String { get }
     }
 
 }
@@ -37,6 +38,8 @@ extension ISO_9075.Dialect {
 
     public var roundPrecisionClose: String { ISO_9075.Keyword.roundPrecisionClose.standard }
 
+    public var binaryLargeObject: String { ISO_9075.Keyword.binaryLargeObject.standard }
+
     public func spelling(_ keyword: ISO_9075.Keyword) -> String {
         switch keyword {
         case .defaultPrimaryKey: defaultPrimaryKey
@@ -49,6 +52,7 @@ extension ISO_9075.Dialect {
         case .roundOperandClose: roundOperandClose
         case .roundPrecisionOpen: roundPrecisionOpen
         case .roundPrecisionClose: roundPrecisionClose
+        case .binaryLargeObject: binaryLargeObject
         }
     }
 

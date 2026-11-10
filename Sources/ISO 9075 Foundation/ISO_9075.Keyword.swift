@@ -10,6 +10,7 @@ extension ISO_9075 {
         case roundOperandClose
         case roundPrecisionOpen
         case roundPrecisionClose
+        case binaryLargeObject
     }
 }
 
@@ -18,6 +19,7 @@ extension ISO_9075.Keyword {
         switch self {
         case .defaultPrimaryKey: "DEFAULT"
         case .unboundedLimit: "ALL"
+        case .binaryLargeObject: "BLOB"
         case .jsonBooleanOpen, .jsonBooleanClose, .roundOpen, .roundClose, .roundOperandOpen, .roundOperandClose,
             .roundPrecisionOpen, .roundPrecisionClose:
             ""
