@@ -87,29 +87,46 @@ actor Journal: ISO_9075.Database {
         }
     }
 
-    func read<Value: Sendable>(
-        _ body: @Sendable (Connection) throws(ISO_9075.Error) -> Value
-    ) async throws(ISO_9075.Error) -> Value {
+    @_disfavoredOverload
+    func read<Value: Sendable, Thrown: Error>(
+        _ body: @Sendable (Connection) throws(Thrown) -> Value
+    ) async throws(ISO_9075.Failure<Thrown>) -> Value {
         let connection = Connection()
         connection.pending = committed
-        return try body(connection)
+        do {
+            return try body(connection)
+        } catch {
+            throw .body(error)
+        }
     }
 
-    func write<Value: Sendable>(
-        _ body: @Sendable (Connection) throws(ISO_9075.Error) -> Value
-    ) async throws(ISO_9075.Error) -> Value {
+    @_disfavoredOverload
+    func write<Value: Sendable, Thrown: Error>(
+        _ body: @Sendable (Connection) throws(Thrown) -> Value
+    ) async throws(ISO_9075.Failure<Thrown>) -> Value {
         let connection = Connection()
-        let value = try body(connection)
-        committed += connection.pending
-        return value
+        do {
+            let value = try body(connection)
+            committed += connection.pending
+            return value
+        } catch {
+            throw .body(error)
+        }
     }
 
-    func withRollback<Value: Sendable>(
-        _ body: @Sendable (Connection) throws(ISO_9075.Error) -> Value
-    ) async throws(ISO_9075.Error) -> Value {
-        try body(Connection())
+    @_disfavoredOverload
+    func withRollback<Value: Sendable, Thrown: Error>(
+        _ body: @Sendable (Connection) throws(Thrown) -> Value
+    ) async throws(ISO_9075.Failure<Thrown>) -> Value {
+        do {
+            return try body(Connection())
+        } catch {
+            throw .body(error)
+        }
     }
 }
+
+struct Refusal: Error, Equatable {}
 
 extension `ISO 9075 Call-Level Interface Tests` {
     @Suite struct `A database scopes synchronous connection work` {
@@ -131,6 +148,30 @@ extension `ISO 9075 Call-Level Interface Tests` {
                 }
             }
             #expect(await journal.committed.isEmpty)
+        }
+
+        @Test func `a write whose body throws its own error commits nothing, and the error comes out as the body's`() async throws {
+            let journal = Journal()
+            await #expect(throws: ISO_9075.Failure<Refusal>.body(Refusal())) {
+                try await journal.write { connection throws(Refusal) in
+                    _ = try? connection.execute("DELETE FROM \"a\"")
+                    throw Refusal()
+                }
+            }
+            #expect(await journal.committed.isEmpty)
+        }
+
+        @Test func `a statement's failure inside a body that throws only the interface's error comes out as that error`() async throws {
+            let journal = Journal()
+            await #expect(throws: ISO_9075.Error.execution("stop")) {
+                try await journal.write { _ throws(ISO_9075.Error) in throw .execution("stop") }
+            }
+            await #expect(throws: ISO_9075.Error.execution("stop")) {
+                try await journal.read { _ throws(ISO_9075.Error) in throw .execution("stop") }
+            }
+            await #expect(throws: ISO_9075.Error.execution("stop")) {
+                try await journal.withRollback { _ throws(ISO_9075.Error) in throw .execution("stop") }
+            }
         }
 
         @Test func `a rollback scope leaves the database untouched`() async throws {
