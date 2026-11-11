@@ -1,5 +1,5 @@
 extension ISO_9075.Diagnostic {
-    public struct State: RawRepresentable, Hashable, Sendable, CustomStringConvertible {
+    public struct State: RawRepresentable, Hashable, Sendable {
         public let rawValue: String
 
         public init?(rawValue: String) {
@@ -7,18 +7,22 @@ extension ISO_9075.Diagnostic {
             self.rawValue = rawValue
         }
 
-        private static func admits(_ byte: UInt8) -> Bool {
-            (UInt8(ascii: "0")...UInt8(ascii: "9")).contains(byte) || (UInt8(ascii: "A")...UInt8(ascii: "Z")).contains(byte)
-        }
-
-        public var `class`: Substring { rawValue.prefix(2) }
-
-        public var description: String { rawValue }
-
         private init(standard rawValue: String) {
             self.rawValue = rawValue
         }
     }
+}
+
+extension ISO_9075.Diagnostic.State {
+    private static func admits(_ byte: UInt8) -> Bool {
+        (UInt8(ascii: "0")...UInt8(ascii: "9")).contains(byte) || (UInt8(ascii: "A")...UInt8(ascii: "Z")).contains(byte)
+    }
+
+    public var `class`: Substring { rawValue.prefix(2) }
+}
+
+extension ISO_9075.Diagnostic.State: CustomStringConvertible {
+    public var description: String { rawValue }
 }
 
 extension ISO_9075.Diagnostic.State {
@@ -30,7 +34,7 @@ extension ISO_9075.Diagnostic.State {
     public static let numericValueOutOfRange = Self(standard: "22003")
     public static let integrityConstraintViolation = Self(standard: "23000")
     public static let restrictViolation = Self(standard: "23001")
-    public static let invalidTransactionState = Self(standard: "25000")
+    public static let invalidTransaction = Self(standard: "25000")
     public static let readOnlyTransaction = Self(standard: "25006")
     public static let serializationFailure = Self(standard: "40001")
     public static let syntaxErrorOrAccessRuleViolation = Self(standard: "42000")

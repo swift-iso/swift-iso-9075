@@ -88,12 +88,12 @@ actor Journal: ISO_9075.Database {
     }
 
     @_disfavoredOverload
-    func read<Value: Sendable, Thrown: Error>(
+    func read<Value: Sendable, Thrown: Swift.Error>(
         _ body: @Sendable (Connection) throws(Thrown) -> Value
     ) async throws(ISO_9075.Failure<Thrown>) -> Value {
         let connection = Connection()
         connection.pending = committed
-        do {
+        do throws(Thrown) {
             return try body(connection)
         } catch {
             throw .body(error)
@@ -101,11 +101,11 @@ actor Journal: ISO_9075.Database {
     }
 
     @_disfavoredOverload
-    func write<Value: Sendable, Thrown: Error>(
+    func write<Value: Sendable, Thrown: Swift.Error>(
         _ body: @Sendable (Connection) throws(Thrown) -> Value
     ) async throws(ISO_9075.Failure<Thrown>) -> Value {
         let connection = Connection()
-        do {
+        do throws(Thrown) {
             let value = try body(connection)
             committed += connection.pending
             return value
@@ -115,10 +115,10 @@ actor Journal: ISO_9075.Database {
     }
 
     @_disfavoredOverload
-    func withRollback<Value: Sendable, Thrown: Error>(
+    func withRollback<Value: Sendable, Thrown: Swift.Error>(
         _ body: @Sendable (Connection) throws(Thrown) -> Value
     ) async throws(ISO_9075.Failure<Thrown>) -> Value {
-        do {
+        do throws(Thrown) {
             return try body(Connection())
         } catch {
             throw .body(error)
@@ -126,7 +126,7 @@ actor Journal: ISO_9075.Database {
     }
 }
 
-struct Refusal: Error, Equatable {}
+struct Refusal: Swift.Error, Equatable {}
 
 extension `ISO 9075 Call-Level Interface Tests` {
     @Suite struct `A database scopes synchronous connection work` {
@@ -154,7 +154,11 @@ extension `ISO 9075 Call-Level Interface Tests` {
             let journal = Journal()
             await #expect(throws: ISO_9075.Failure<Refusal>.body(Refusal())) {
                 try await journal.write { connection throws(Refusal) in
-                    _ = try? connection.execute("DELETE FROM \"a\"")
+                    do throws(ISO_9075.Error) {
+                        _ = try connection.execute("DELETE FROM \"a\"")
+                    } catch {
+                        Issue.record(error)
+                    }
                     throw Refusal()
                 }
             }
