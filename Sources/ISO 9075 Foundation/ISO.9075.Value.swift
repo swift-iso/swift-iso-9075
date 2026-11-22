@@ -11,7 +11,7 @@ extension ISO.`9075` {
         case text(String)
         case blob([Byte])
         case timestamp(Time.Instant)
-        case uuid(RFC_4122.UUID)
+        case uuid(IETF.RFC.`4122`.UUID)
         case decimal(String)
         case json([Byte])
         indirect case array([Value], of: Kind)
