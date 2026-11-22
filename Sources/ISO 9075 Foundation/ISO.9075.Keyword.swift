@@ -1,4 +1,4 @@
-extension ISO_9075 {
+extension ISO.`9075` {
     public enum Keyword: Hashable, Sendable {
         case defaultPrimaryKey
         case jsonBooleanOpen
@@ -14,7 +14,7 @@ extension ISO_9075 {
     }
 }
 
-extension ISO_9075.Keyword {
+extension ISO.`9075`.Keyword {
     public var standard: String {
         switch self {
         case .defaultPrimaryKey: "DEFAULT"

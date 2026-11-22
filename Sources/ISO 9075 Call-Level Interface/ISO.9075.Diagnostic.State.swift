@@ -1,4 +1,4 @@
-extension ISO_9075.Diagnostic {
+extension ISO.`9075`.Diagnostic {
     public struct State: RawRepresentable, Hashable, Sendable {
         public let rawValue: String
 
@@ -13,7 +13,7 @@ extension ISO_9075.Diagnostic {
     }
 }
 
-extension ISO_9075.Diagnostic.State {
+extension ISO.`9075`.Diagnostic.State {
     private static func admits(_ byte: UInt8) -> Bool {
         (UInt8(ascii: "0")...UInt8(ascii: "9")).contains(byte) || (UInt8(ascii: "A")...UInt8(ascii: "Z")).contains(byte)
     }
@@ -21,11 +21,11 @@ extension ISO_9075.Diagnostic.State {
     public var `class`: Substring { rawValue.prefix(2) }
 }
 
-extension ISO_9075.Diagnostic.State: CustomStringConvertible {
+extension ISO.`9075`.Diagnostic.State: CustomStringConvertible {
     public var description: String { rawValue }
 }
 
-extension ISO_9075.Diagnostic.State {
+extension ISO.`9075`.Diagnostic.State {
     public static let connectionException = Self(standard: "08000")
     public static let unableToEstablishConnection = Self(standard: "08001")
     public static let featureNotSupported = Self(standard: "0A000")

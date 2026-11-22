@@ -1,4 +1,4 @@
-extension ISO_9075 {
+extension ISO.`9075` {
     public enum Error: Swift::Error, Hashable, Sendable {
         case connection(String)
         case execution(String)
@@ -9,8 +9,8 @@ extension ISO_9075 {
     }
 }
 
-extension ISO_9075.Error {
-    public var state: ISO_9075.Diagnostic.State? {
+extension ISO.`9075`.Error {
+    public var state: ISO.`9075`.Diagnostic.State? {
         guard case .diagnostic(let diagnostic) = self else { return nil }
         return diagnostic.state
     }

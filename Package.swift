@@ -16,6 +16,7 @@ let package = Package(
         .library(name: "ISO 9075 Call-Level Interface", targets: ["ISO 9075 Call-Level Interface"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/swift-iso/swift-iso.git", branch: "main"),
         .package(url: "https://github.com/swift-atoms/swift-byte.git", branch: "main"),
         .package(url: "https://github.com/swift-atoms/swift-time.git", branch: "main"),
         .package(url: "https://github.com/swift-ietf/swift-rfc-4122.git", branch: "main"),
@@ -25,6 +26,7 @@ let package = Package(
         .target(
             name: "ISO 9075 Foundation",
             dependencies: [
+                .product(name: "ISO", package: "swift-iso"),
                 .product(name: "Byte", package: "swift-byte"),
                 .product(name: "Time", package: "swift-time"),
                 .product(name: "RFC 4122", package: "swift-rfc-4122"),

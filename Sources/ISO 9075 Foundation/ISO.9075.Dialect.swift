@@ -1,4 +1,4 @@
-extension ISO_9075 {
+extension ISO.`9075` {
     public protocol Dialect: Sendable {
         func placeholder(_ offset: Int) -> String
         func literal(_ value: Value) throws(Value.Failure) -> String
@@ -17,30 +17,30 @@ extension ISO_9075 {
 
 }
 
-extension ISO_9075.Dialect {
-    public var defaultPrimaryKey: String { ISO_9075.Keyword.defaultPrimaryKey.standard }
+extension ISO.`9075`.Dialect {
+    public var defaultPrimaryKey: String { ISO.`9075`.Keyword.defaultPrimaryKey.standard }
 
-    public var jsonBooleanOpen: String { ISO_9075.Keyword.jsonBooleanOpen.standard }
+    public var jsonBooleanOpen: String { ISO.`9075`.Keyword.jsonBooleanOpen.standard }
 
-    public var jsonBooleanClose: String { ISO_9075.Keyword.jsonBooleanClose.standard }
+    public var jsonBooleanClose: String { ISO.`9075`.Keyword.jsonBooleanClose.standard }
 
-    public var unboundedLimit: String { ISO_9075.Keyword.unboundedLimit.standard }
+    public var unboundedLimit: String { ISO.`9075`.Keyword.unboundedLimit.standard }
 
-    public var roundOpen: String { ISO_9075.Keyword.roundOpen.standard }
+    public var roundOpen: String { ISO.`9075`.Keyword.roundOpen.standard }
 
-    public var roundClose: String { ISO_9075.Keyword.roundClose.standard }
+    public var roundClose: String { ISO.`9075`.Keyword.roundClose.standard }
 
-    public var roundOperandOpen: String { ISO_9075.Keyword.roundOperandOpen.standard }
+    public var roundOperandOpen: String { ISO.`9075`.Keyword.roundOperandOpen.standard }
 
-    public var roundOperandClose: String { ISO_9075.Keyword.roundOperandClose.standard }
+    public var roundOperandClose: String { ISO.`9075`.Keyword.roundOperandClose.standard }
 
-    public var roundPrecisionOpen: String { ISO_9075.Keyword.roundPrecisionOpen.standard }
+    public var roundPrecisionOpen: String { ISO.`9075`.Keyword.roundPrecisionOpen.standard }
 
-    public var roundPrecisionClose: String { ISO_9075.Keyword.roundPrecisionClose.standard }
+    public var roundPrecisionClose: String { ISO.`9075`.Keyword.roundPrecisionClose.standard }
 
-    public var binaryLargeObject: String { ISO_9075.Keyword.binaryLargeObject.standard }
+    public var binaryLargeObject: String { ISO.`9075`.Keyword.binaryLargeObject.standard }
 
-    public func spelling(_ keyword: ISO_9075.Keyword) -> String {
+    public func spelling(_ keyword: ISO.`9075`.Keyword) -> String {
         switch keyword {
         case .defaultPrimaryKey: defaultPrimaryKey
         case .jsonBooleanOpen: jsonBooleanOpen
@@ -56,13 +56,13 @@ extension ISO_9075.Dialect {
         }
     }
 
-    public func literal(_ value: ISO_9075.Value) throws(ISO_9075.Value.Failure) -> String {
+    public func literal(_ value: ISO.`9075`.Value) throws(ISO.`9075`.Value.Failure) -> String {
         try value.literal
     }
 
-    public func render(_ fragment: ISO_9075.Fragment) throws(ISO_9075.Value.Failure) -> ISO_9075.Rendering {
+    public func render(_ fragment: ISO.`9075`.Fragment) throws(ISO.`9075`.Value.Failure) -> ISO.`9075`.Rendering {
         var sql = ""
-        var values: [ISO_9075.Value] = []
+        var values: [ISO.`9075`.Value] = []
         for segment in fragment.segments {
             switch segment {
             case .sql(let text):
@@ -76,10 +76,10 @@ extension ISO_9075.Dialect {
                 sql.append(spelling(keyword))
             }
         }
-        return ISO_9075.Rendering(sql: sql, values: values)
+        return ISO.`9075`.Rendering(sql: sql, values: values)
     }
 
-    public func inline(_ fragment: ISO_9075.Fragment) throws(ISO_9075.Value.Failure) -> String {
+    public func inline(_ fragment: ISO.`9075`.Fragment) throws(ISO.`9075`.Value.Failure) -> String {
         var sql = ""
         for segment in fragment.segments {
             switch segment {

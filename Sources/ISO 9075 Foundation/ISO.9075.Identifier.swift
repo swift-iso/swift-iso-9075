@@ -1,4 +1,4 @@
-extension ISO_9075 {
+extension ISO.`9075` {
     public struct Identifier: Hashable, Sendable {
         public var name: String
         public let key: ObjectIdentifier?
@@ -10,7 +10,7 @@ extension ISO_9075 {
     }
 }
 
-extension ISO_9075.Identifier {
+extension ISO.`9075`.Identifier {
     public var delimited: String {
         "\"" + name.replacing("\"", with: "\"\"") + "\""
     }

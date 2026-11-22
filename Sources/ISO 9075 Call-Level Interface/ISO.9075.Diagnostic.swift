@@ -1,4 +1,4 @@
-extension ISO_9075 {
+extension ISO.`9075` {
     public struct Diagnostic: Hashable, Sendable {
         public let state: State
         public let native: Int32?
@@ -12,7 +12,7 @@ extension ISO_9075 {
     }
 }
 
-extension ISO_9075.Diagnostic: CustomStringConvertible {
+extension ISO.`9075`.Diagnostic: CustomStringConvertible {
     public var description: String {
         "SQLSTATE \(state)" + (native.map { " (\($0))" } ?? "") + ": \(message)"
     }

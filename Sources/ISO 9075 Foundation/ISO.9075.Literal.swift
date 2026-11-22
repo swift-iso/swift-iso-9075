@@ -2,12 +2,12 @@ public import Byte
 internal import ISO_8601
 public import Time
 
-extension ISO_9075 {
+extension ISO.`9075` {
     public enum Literal {
         public static func timestamp(_ instant: Time.Instant) throws(Value.Failure) -> String {
-            let dateTime: ISO_8601.DateTime
-            do throws(ISO_8601.DateTime.Error) {
-                dateTime = try ISO_8601.DateTime(instant)
+            let dateTime: ISO.`8601`.DateTime
+            do throws(ISO.`8601`.DateTime.Error) {
+                dateTime = try ISO.`8601`.DateTime(instant)
             } catch {
                 throw Value.Failure(error)
             }
@@ -33,8 +33,8 @@ extension ISO_9075 {
                 throw Value.Failure("\(text) is not a timestamp")
             }
             let days: Int
-            do throws(ISO_8601.CalendarDate.Error) {
-                days = try ISO_8601.CalendarDate(year: values[0], month: values[1], day: values[2]).daysSinceUnixEpoch
+            do throws(ISO.`8601`.CalendarDate.Error) {
+                days = try ISO.`8601`.CalendarDate(year: values[0], month: values[1], day: values[2]).daysSinceUnixEpoch
             } catch {
                 throw Value.Failure(error)
             }
@@ -58,7 +58,7 @@ extension ISO_9075 {
     }
 }
 
-extension ISO_9075.Literal {
+extension ISO.`9075`.Literal {
     public static func character(_ text: String) -> String {
         "'" + text.replacing("'", with: "''") + "'"
     }

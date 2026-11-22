@@ -3,11 +3,11 @@ import ISO_9075_Foundation
 import Testing
 import Time
 
-struct Positional: ISO_9075.Dialect {
+struct Positional: ISO.`9075`.Dialect {
     func placeholder(_ offset: Int) -> String { "?" }
 }
 
-struct Numbered: ISO_9075.Dialect {
+struct Numbered: ISO.`9075`.Dialect {
     func placeholder(_ offset: Int) -> String { "$\(offset)" }
 }
 
@@ -15,12 +15,13 @@ enum `ISO 9075 Foundation Tests` {}
 
 extension `ISO 9075 Foundation Tests` {
     @Suite struct `Rendering a fragment` {
-        let fragment: ISO_9075.Fragment = "SELECT \(quote: "title") FROM \(ISO_9075.Identifier("reminders")) WHERE \(quote: "isCompleted") = \(.bool(true)) AND \(quote: "title") <> \(.text("Taxes"))"
+        let fragment: ISO.`9075`.Fragment =
+            "SELECT \(quote: "title") FROM \(ISO.`9075`.Identifier("reminders")) WHERE \(quote: "isCompleted") = \(.bool(true)) AND \(quote: "title") <> \(.text("Taxes"))"
 
         @Test func `values become placeholders in order, per the dialect`() throws {
             #expect(
                 try Positional().render(fragment)
-                    == ISO_9075.Rendering(
+                    == ISO.`9075`.Rendering(
                         sql: #"SELECT "title" FROM "reminders" WHERE "isCompleted" = ? AND "title" <> ?"#,
                         values: [.bool(true), .text("Taxes")]
                     )
@@ -33,20 +34,20 @@ extension `ISO 9075 Foundation Tests` {
         }
 
         @Test func `an invalid value cannot be inlined`() {
-            #expect(throws: ISO_9075.Value.Failure("unencodable")) {
-                try Positional().inline("SELECT \(.invalid(ISO_9075.Value.Failure("unencodable")))")
+            #expect(throws: ISO.`9075`.Value.Failure("unencodable")) {
+                try Positional().inline("SELECT \(.invalid(ISO.`9075`.Value.Failure("unencodable")))")
             }
         }
 
         @Test func `an invalid value cannot be rendered`() {
-            #expect(throws: ISO_9075.Value.Failure("unencodable")) {
-                try Positional().render("SELECT \(.invalid(ISO_9075.Value.Failure("unencodable")))")
+            #expect(throws: ISO.`9075`.Value.Failure("unencodable")) {
+                try Positional().render("SELECT \(.invalid(ISO.`9075`.Value.Failure("unencodable")))")
             }
         }
 
         @Test func `an array holding an invalid value cannot be rendered`() {
-            #expect(throws: ISO_9075.Value.Failure("unencodable")) {
-                try Positional().render("SELECT \(.array([.int(1), .invalid(ISO_9075.Value.Failure("unencodable"))], of: .int))")
+            #expect(throws: ISO.`9075`.Value.Failure("unencodable")) {
+                try Positional().render("SELECT \(.array([.int(1), .invalid(ISO.`9075`.Value.Failure("unencodable"))], of: .int))")
             }
         }
 
@@ -59,19 +60,19 @@ extension `ISO 9075 Foundation Tests` {
 extension `ISO 9075 Foundation Tests` {
     @Suite struct `Delimited identifiers and literals` {
         @Test func `a delimiter inside an identifier is doubled`() {
-            #expect(ISO_9075.Identifier(#"the "best" table"#).delimited == #""the ""best"" table""#)
+            #expect(ISO.`9075`.Identifier(#"the "best" table"#).delimited == #""the ""best"" table""#)
         }
 
         @Test func `a quote inside a character literal is doubled`() {
-            #expect(ISO_9075.Literal.character("it's") == "'it''s'")
+            #expect(ISO.`9075`.Literal.character("it's") == "'it''s'")
         }
 
         @Test func `a binary literal is hexadecimal`() {
-            #expect(ISO_9075.Literal.binary([Byte(0x00), Byte(0xAB), Byte(0x0F)]) == "X'00AB0F'")
+            #expect(ISO.`9075`.Literal.binary([Byte(0x00), Byte(0xAB), Byte(0x0F)]) == "X'00AB0F'")
         }
 
         @Test func `fragments join with a separator`() throws {
-            let joined = [ISO_9075.Fragment("a"), "b", "c"].joined(separator: ", ")
+            let joined = [ISO.`9075`.Fragment("a"), "b", "c"].joined(separator: ", ")
             #expect(try Positional().render(joined).sql == "a, b, c")
         }
     }
@@ -80,22 +81,22 @@ extension `ISO 9075 Foundation Tests` {
 extension `ISO 9075 Foundation Tests` {
     @Suite struct `Timestamp literals` {
         @Test func `the epoch is midnight, the first of January 1970`() throws {
-            #expect(try ISO_9075.Literal.timestamp(Time.Instant(secondsSinceUnixEpoch: 0)) == "1970-01-01 00:00:00.000")
+            #expect(try ISO.`9075`.Literal.timestamp(Time.Instant(secondsSinceUnixEpoch: 0)) == "1970-01-01 00:00:00.000")
         }
 
         @Test func `a leap day keeps its milliseconds`() throws {
-            #expect(try ISO_9075.Literal.timestamp(Time.Instant(secondsSinceUnixEpoch: 951_827_696, nanosecondFraction: 123_456_789)) == "2000-02-29 12:34:56.123")
+            #expect(try ISO.`9075`.Literal.timestamp(Time.Instant(secondsSinceUnixEpoch: 951_827_696, nanosecondFraction: 123_456_789)) == "2000-02-29 12:34:56.123")
         }
 
         @Test func `a timestamp literal reads back as its instant`() throws {
             let instant = try Time.Instant(secondsSinceUnixEpoch: 951_827_696, nanosecondFraction: 123_000_000)
-            #expect(try ISO_9075.Literal.instant("2000-02-29 12:34:56.123") == instant)
-            #expect(try ISO_9075.Literal.instant("2000-02-29T12:34:56.123") == instant)
-            #expect(try ISO_9075.Literal.instant("1970-01-01 00:00:00") == Time.Instant(secondsSinceUnixEpoch: 0))
+            #expect(try ISO.`9075`.Literal.instant("2000-02-29 12:34:56.123") == instant)
+            #expect(try ISO.`9075`.Literal.instant("2000-02-29T12:34:56.123") == instant)
+            #expect(try ISO.`9075`.Literal.instant("1970-01-01 00:00:00") == Time.Instant(secondsSinceUnixEpoch: 0))
         }
 
         @Test func `text that is not a timestamp is refused`() {
-            #expect(throws: ISO_9075.Value.Failure.self) { try ISO_9075.Literal.instant("yesterday") }
+            #expect(throws: ISO.`9075`.Value.Failure.self) { try ISO.`9075`.Literal.instant("yesterday") }
         }
 
         @Test(arguments: [
@@ -113,15 +114,15 @@ extension `ISO 9075 Foundation Tests` {
             "99999999999999-01-01 00:00:00",
         ])
         func `a timestamp with an out-of-range, signed, non-digit or extra field is refused`(_ text: String) {
-            #expect(throws: ISO_9075.Value.Failure.self) { try ISO_9075.Literal.instant(text) }
+            #expect(throws: ISO.`9075`.Value.Failure.self) { try ISO.`9075`.Literal.instant(text) }
         }
 
         @Test func `the last second of a day and a nine-digit fraction read back`() throws {
-            #expect(try ISO_9075.Literal.instant("1970-01-01 23:59:59.999999999") == Time.Instant(secondsSinceUnixEpoch: 86_399, nanosecondFraction: 999_999_999))
+            #expect(try ISO.`9075`.Literal.instant("1970-01-01 23:59:59.999999999") == Time.Instant(secondsSinceUnixEpoch: 86_399, nanosecondFraction: 999_999_999))
         }
 
         @Test func `an instant before the epoch counts back`() throws {
-            #expect(try ISO_9075.Literal.timestamp(Time.Instant(secondsSinceUnixEpoch: -1)) == "1969-12-31 23:59:59.000")
+            #expect(try ISO.`9075`.Literal.timestamp(Time.Instant(secondsSinceUnixEpoch: -1)) == "1969-12-31 23:59:59.000")
         }
     }
 }
@@ -129,13 +130,13 @@ extension `ISO 9075 Foundation Tests` {
 extension `ISO 9075 Foundation Tests` {
     @Suite struct `Debug descriptions` {
         @Test func `a fragment describes itself with its values inlined`() {
-            let fragment: ISO_9075.Fragment = "SELECT \(ISO_9075.Identifier("title")) WHERE \(quote: "id") = \(.int(1)) AND \(quote: "tags") = \(.array([.text("a"), .null], of: .text))"
+            let fragment: ISO.`9075`.Fragment = "SELECT \(ISO.`9075`.Identifier("title")) WHERE \(quote: "id") = \(.int(1)) AND \(quote: "tags") = \(.array([.text("a"), .null], of: .text))"
             #expect(fragment.debugDescription == #"SELECT "title" WHERE "id" = 1 AND "tags" = ARRAY['a', NULL]"#)
         }
     }
 }
 
-struct Engine: ISO_9075.Dialect {
+struct Engine: ISO.`9075`.Dialect {
     func placeholder(_ offset: Int) -> String { "?" }
     var defaultPrimaryKey: String { "NULL" }
     var jsonBooleanOpen: String { "json(CASE " }
@@ -152,7 +153,7 @@ struct Engine: ISO_9075.Dialect {
 
 extension `ISO 9075 Foundation Tests` {
     @Suite struct `Keywords` {
-        let fragment: ISO_9075.Fragment = "VALUES (\(ISO_9075.Keyword.defaultPrimaryKey), \(.text("Taxes")))"
+        let fragment: ISO.`9075`.Fragment = "VALUES (\(ISO.`9075`.Keyword.defaultPrimaryKey), \(.text("Taxes")))"
 
         @Test func `a dialect spells each keyword when it renders`() throws {
             #expect(try Engine().render(fragment).sql == "VALUES (NULL, ?)")
@@ -167,7 +168,7 @@ extension `ISO 9075 Foundation Tests` {
 
 extension `ISO 9075 Foundation Tests` {
     @Suite struct `JSON booleans` {
-        let fragment: ISO_9075.Fragment = "\(ISO_9075.Keyword.jsonBooleanOpen)\(quote: "isDone")\(ISO_9075.Keyword.jsonBooleanClose)"
+        let fragment: ISO.`9075`.Fragment = "\(ISO.`9075`.Keyword.jsonBooleanOpen)\(quote: "isDone")\(ISO.`9075`.Keyword.jsonBooleanClose)"
 
         @Test func `the standard passes a boolean through`() {
             #expect(fragment.debugDescription == #""isDone""#)
@@ -181,7 +182,7 @@ extension `ISO 9075 Foundation Tests` {
 
 extension `ISO 9075 Foundation Tests` {
     @Suite struct `Unbounded limits` {
-        let fragment: ISO_9075.Fragment = "LIMIT \(ISO_9075.Keyword.unboundedLimit) OFFSET \(.int(10))"
+        let fragment: ISO.`9075`.Fragment = "LIMIT \(ISO.`9075`.Keyword.unboundedLimit) OFFSET \(.int(10))"
 
         @Test func `the standard spells an unbounded limit ALL`() throws {
             #expect(try Positional().render(fragment).sql == "LIMIT ALL OFFSET ?")
@@ -196,7 +197,7 @@ extension `ISO 9075 Foundation Tests` {
 
 extension `ISO 9075 Foundation Tests` {
     @Suite struct `Binary large objects` {
-        let fragment: ISO_9075.Fragment = "CREATE TABLE \(quote: "files") (\(quote: "bytes") \(ISO_9075.Keyword.binaryLargeObject))"
+        let fragment: ISO.`9075`.Fragment = "CREATE TABLE \(quote: "files") (\(quote: "bytes") \(ISO.`9075`.Keyword.binaryLargeObject))"
 
         @Test func `the standard spells the type BLOB`() throws {
             #expect(try Positional().render(fragment).sql == #"CREATE TABLE "files" ("bytes" BLOB)"#)
@@ -210,8 +211,8 @@ extension `ISO 9075 Foundation Tests` {
 
 extension `ISO 9075 Foundation Tests` {
     @Suite struct `Rounding` {
-        let fragment: ISO_9075.Fragment =
-            "\(ISO_9075.Keyword.roundOpen)round(\(ISO_9075.Keyword.roundOperandOpen)\(quote: "value")\(ISO_9075.Keyword.roundOperandClose), \(ISO_9075.Keyword.roundPrecisionOpen)\(.int(2))\(ISO_9075.Keyword.roundPrecisionClose))\(ISO_9075.Keyword.roundClose)"
+        let fragment: ISO.`9075`.Fragment =
+            "\(ISO.`9075`.Keyword.roundOpen)round(\(ISO.`9075`.Keyword.roundOperandOpen)\(quote: "value")\(ISO.`9075`.Keyword.roundOperandClose), \(ISO.`9075`.Keyword.roundPrecisionOpen)\(.int(2))\(ISO.`9075`.Keyword.roundPrecisionClose))\(ISO.`9075`.Keyword.roundClose)"
 
         @Test func `the standard rounds the operand as it is`() throws {
             #expect(try Positional().render(fragment).sql == #"round("value", ?)"#)
@@ -226,11 +227,11 @@ extension `ISO 9075 Foundation Tests` {
 extension `ISO 9075 Foundation Tests` {
     @Suite struct `Arrays` {
         @Test func `an array carries its element kind`() {
-            #expect(ISO_9075.Value.array([], of: .int) != ISO_9075.Value.array([], of: .text))
+            #expect(ISO.`9075`.Value.array([], of: .int) != ISO.`9075`.Value.array([], of: .text))
         }
 
         @Test func `an empty array is an empty standard literal`() throws {
-            #expect(try ISO_9075.Value.array([], of: .int).literal == "ARRAY[]")
+            #expect(try ISO.`9075`.Value.array([], of: .int).literal == "ARRAY[]")
         }
     }
 }
