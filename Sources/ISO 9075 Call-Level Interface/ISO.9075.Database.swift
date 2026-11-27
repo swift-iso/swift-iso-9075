@@ -1,30 +1,30 @@
 extension ISO.`9075` {
     public protocol Reader: Sendable {
-        associatedtype Connection: ISO.`9075`.Connection
+        associatedtype Connection: ISO.`9075`.Connection & ~Copyable & ~Escapable
 
         @_disfavoredOverload
-        func read<Value: Sendable, Thrown: Swift::Error>(
-            _ body: @Sendable (Connection) throws(Thrown) -> Value
-        ) async throws(ISO.`9075`.Failure<Thrown>) -> Value
+        nonisolated(nonsending) func read<Value, Thrown: Swift::Error>(
+            _ body: sending (borrowing Connection) throws(Thrown) -> sending Value
+        ) async throws(ISO.`9075`.Failure<Thrown>) -> sending Value
     }
 
     public protocol Database: Reader {
         @_disfavoredOverload
-        func write<Value: Sendable, Thrown: Swift::Error>(
-            _ body: @Sendable (Connection) throws(Thrown) -> Value
-        ) async throws(ISO.`9075`.Failure<Thrown>) -> Value
+        nonisolated(nonsending) func write<Value, Thrown: Swift::Error>(
+            _ body: sending (borrowing Connection) throws(Thrown) -> sending Value
+        ) async throws(ISO.`9075`.Failure<Thrown>) -> sending Value
 
         @_disfavoredOverload
-        func withRollback<Value: Sendable, Thrown: Swift::Error>(
-            _ body: @Sendable (Connection) throws(Thrown) -> Value
-        ) async throws(ISO.`9075`.Failure<Thrown>) -> Value
+        nonisolated(nonsending) func withRollback<Value, Thrown: Swift::Error>(
+            _ body: sending (borrowing Connection) throws(Thrown) -> sending Value
+        ) async throws(ISO.`9075`.Failure<Thrown>) -> sending Value
     }
 }
 
 extension ISO.`9075`.Reader {
-    public func read<Value: Sendable>(
-        _ body: @Sendable (Connection) throws(ISO.`9075`.Error) -> Value
-    ) async throws(ISO.`9075`.Error) -> Value {
+    public nonisolated(nonsending) func read<Value>(
+        _ body: sending (borrowing Connection) throws(ISO.`9075`.Error) -> sending Value
+    ) async throws(ISO.`9075`.Error) -> sending Value {
         do throws(ISO.`9075`.Failure<ISO.`9075`.Error>) {
             return try await reading(self, body)
         } catch {
@@ -34,9 +34,9 @@ extension ISO.`9075`.Reader {
 }
 
 extension ISO.`9075`.Database {
-    public func write<Value: Sendable>(
-        _ body: @Sendable (Connection) throws(ISO.`9075`.Error) -> Value
-    ) async throws(ISO.`9075`.Error) -> Value {
+    public nonisolated(nonsending) func write<Value>(
+        _ body: sending (borrowing Connection) throws(ISO.`9075`.Error) -> sending Value
+    ) async throws(ISO.`9075`.Error) -> sending Value {
         do throws(ISO.`9075`.Failure<ISO.`9075`.Error>) {
             return try await writing(self, body)
         } catch {
@@ -44,9 +44,9 @@ extension ISO.`9075`.Database {
         }
     }
 
-    public func withRollback<Value: Sendable>(
-        _ body: @Sendable (Connection) throws(ISO.`9075`.Error) -> Value
-    ) async throws(ISO.`9075`.Error) -> Value {
+    public nonisolated(nonsending) func withRollback<Value>(
+        _ body: sending (borrowing Connection) throws(ISO.`9075`.Error) -> sending Value
+    ) async throws(ISO.`9075`.Error) -> sending Value {
         do throws(ISO.`9075`.Failure<ISO.`9075`.Error>) {
             return try await rollingBack(self, body)
         } catch {
@@ -54,28 +54,28 @@ extension ISO.`9075`.Database {
         }
     }
 
-    public func execute(_ fragment: ISO.`9075`.Fragment) async throws(ISO.`9075`.Error) -> Int {
-        try await write { connection throws(ISO.`9075`.Error) in try connection.execute(fragment) }
+    public nonisolated(nonsending) func execute(_ fragment: ISO.`9075`.Fragment) async throws(ISO.`9075`.Error) -> Int {
+        try await write { (connection: borrowing Connection) throws(ISO.`9075`.Error) in try connection.execute(fragment) }
     }
 }
 
-private func reading<Reader: ISO.`9075`.Reader, Value: Sendable, Thrown: Swift::Error>(
+private nonisolated(nonsending) func reading<Reader: ISO.`9075`.Reader, Value, Thrown: Swift::Error>(
     _ reader: Reader,
-    _ body: @Sendable (Reader.Connection) throws(Thrown) -> Value
-) async throws(ISO.`9075`.Failure<Thrown>) -> Value {
+    _ body: sending (borrowing Reader.Connection) throws(Thrown) -> sending Value
+) async throws(ISO.`9075`.Failure<Thrown>) -> sending Value {
     try await reader.read(body)
 }
 
-private func writing<Database: ISO.`9075`.Database, Value: Sendable, Thrown: Swift::Error>(
+private nonisolated(nonsending) func writing<Database: ISO.`9075`.Database, Value, Thrown: Swift::Error>(
     _ database: Database,
-    _ body: @Sendable (Database.Connection) throws(Thrown) -> Value
-) async throws(ISO.`9075`.Failure<Thrown>) -> Value {
+    _ body: sending (borrowing Database.Connection) throws(Thrown) -> sending Value
+) async throws(ISO.`9075`.Failure<Thrown>) -> sending Value {
     try await database.write(body)
 }
 
-private func rollingBack<Database: ISO.`9075`.Database, Value: Sendable, Thrown: Swift::Error>(
+private nonisolated(nonsending) func rollingBack<Database: ISO.`9075`.Database, Value, Thrown: Swift::Error>(
     _ database: Database,
-    _ body: @Sendable (Database.Connection) throws(Thrown) -> Value
-) async throws(ISO.`9075`.Failure<Thrown>) -> Value {
+    _ body: sending (borrowing Database.Connection) throws(Thrown) -> sending Value
+) async throws(ISO.`9075`.Failure<Thrown>) -> sending Value {
     try await database.withRollback(body)
 }

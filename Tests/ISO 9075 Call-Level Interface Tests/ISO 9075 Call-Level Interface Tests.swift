@@ -70,12 +70,23 @@ extension `ISO 9075 Call-Level Interface Tests` {
 actor Journal: ISO.`9075`.Database {
     private(set) var committed: [String] = []
 
-    final class Connection: ISO.`9075`.Connection {
+    /// What one scope ran. Not Sendable: it belongs to the journal.
+    final class Pending {
+        var statements: [String] = []
+    }
+
+    /// The journal's connection: a view of one scope's statements that cannot outlive the scope.
+    struct Connection: ISO.`9075`.Connection, ~Copyable, ~Escapable {
         let dialect = Numbered()
-        var pending: [String] = []
+        let pending: Pending
+
+        @_lifetime(borrow pending)
+        init(_ pending: borrowing Pending) {
+            self.pending = copy pending
+        }
 
         func execute(_ statement: ISO.`9075`.Rendering) throws(ISO.`9075`.Error) -> Int {
-            pending.append(statement.sql)
+            pending.statements.append(statement.sql)
             return 1
         }
 
@@ -83,43 +94,49 @@ actor Journal: ISO.`9075`.Database {
             _ statement: ISO.`9075`.Rendering,
             decode: (Row) throws(ISO.`9075`.Error) -> Value
         ) throws(ISO.`9075`.Error) -> [Value] {
-            try pending.map { sql throws(ISO.`9075`.Error) in try decode(Row(columns: ["sql"], values: [.text(sql)])) }
+            try pending.statements.map { sql throws(ISO.`9075`.Error) in try decode(Row(columns: ["sql"], values: [.text(sql)])) }
         }
     }
 
-    @_disfavoredOverload
-    func read<Value: Sendable, Thrown: Swift.Error>(
-        _ body: @Sendable (Connection) throws(Thrown) -> Value
-    ) async throws(ISO.`9075`.Failure<Thrown>) -> Value {
-        let connection = Connection()
-        connection.pending = committed
-        do throws(Thrown) {
-            return try body(connection)
-        } catch {
-            throw .body(error)
-        }
+    enum Scope {
+        case read
+        case write
+        case rollback
     }
 
     @_disfavoredOverload
-    func write<Value: Sendable, Thrown: Swift.Error>(
-        _ body: @Sendable (Connection) throws(Thrown) -> Value
-    ) async throws(ISO.`9075`.Failure<Thrown>) -> Value {
-        let connection = Connection()
+    nonisolated(nonsending) func read<Value, Thrown: Swift.Error>(
+        _ body: sending (borrowing Connection) throws(Thrown) -> sending Value
+    ) async throws(ISO.`9075`.Failure<Thrown>) -> sending Value {
+        try await run(.read, body)
+    }
+
+    @_disfavoredOverload
+    nonisolated(nonsending) func write<Value, Thrown: Swift.Error>(
+        _ body: sending (borrowing Connection) throws(Thrown) -> sending Value
+    ) async throws(ISO.`9075`.Failure<Thrown>) -> sending Value {
+        try await run(.write, body)
+    }
+
+    @_disfavoredOverload
+    nonisolated(nonsending) func withRollback<Value, Thrown: Swift.Error>(
+        _ body: sending (borrowing Connection) throws(Thrown) -> sending Value
+    ) async throws(ISO.`9075`.Failure<Thrown>) -> sending Value {
+        try await run(.rollback, body)
+    }
+
+    /// On the journal: the body arrives by `sending` and its result leaves by `sending`.
+    private func run<Value, Thrown: Swift.Error>(
+        _ scope: Scope,
+        _ body: sending (borrowing Connection) throws(Thrown) -> sending Value
+    ) throws(ISO.`9075`.Failure<Thrown>) -> sending Value {
+        let pending = Pending()
+        if case .read = scope { pending.statements = committed }
+        let connection = Connection(pending)
         do throws(Thrown) {
             let value = try body(connection)
-            committed += connection.pending
+            if case .write = scope { committed += pending.statements }
             return value
-        } catch {
-            throw .body(error)
-        }
-    }
-
-    @_disfavoredOverload
-    func withRollback<Value: Sendable, Thrown: Swift.Error>(
-        _ body: @Sendable (Connection) throws(Thrown) -> Value
-    ) async throws(ISO.`9075`.Failure<Thrown>) -> Value {
-        do throws(Thrown) {
-            return try body(Connection())
         } catch {
             throw .body(error)
         }
@@ -214,5 +231,62 @@ extension `ISO 9075 Call-Level Interface Tests` {
         let diagnostic = ISO.`9075`.Diagnostic(state: .integrityConstraintViolation, native: 1555, message: "UNIQUE constraint failed")
         #expect(ISO.`9075`.Error.diagnostic(diagnostic).state == .integrityConstraintViolation)
         #expect(ISO.`9075`.Error.execution("no state").state == nil)
+    }
+}
+
+/// Neither Sendable nor a value: what a body may capture, and what it may return, under `sending`.
+final class Tally {
+    var count = 0
+}
+
+func statements(of database: some ISO.`9075`.Database) async throws(ISO.`9075`.Error) -> Int {
+    _ = try await database.execute("DELETE FROM \"a\"")
+    return try await database.read { connection throws(ISO.`9075`.Error) in
+        try connection.fetchAll("SELECT 1") { _ throws(ISO.`9075`.Error) in 1 }.count
+    }
+}
+
+extension `ISO 9075 Call-Level Interface Tests` {
+    @Suite struct `A scope sends its body and its result` {
+        @Test func `a body captures what is not Sendable and returns what is not Sendable`() async throws {
+            let journal = Journal()
+            let captured = Tally()
+            let returned: Tally = try await journal.write { connection throws(ISO.`9075`.Error) in
+                captured.count += 1
+                let result = Tally()
+                result.count = try connection.execute("DELETE FROM \"a\"") + captured.count
+                return result
+            }
+            returned.count += 100
+            #expect(returned.count == 102)
+        }
+
+        @Test @MainActor func `a caller on the main actor is on the main actor after the scope`() async throws {
+            let journal = Journal()
+            let returned: Tally = try await journal.write { connection throws(ISO.`9075`.Error) in
+                let result = Tally()
+                result.count = try connection.execute("DELETE FROM \"a\"")
+                return result
+            }
+            MainActor.assertIsolated()
+            #expect(returned.count == 1)
+        }
+
+        @Test func `a database is used through an opaque type, and an existential through a generic function`() async throws {
+            let journal = Journal()
+            #expect(try await statements(of: journal) == 1)
+            let existential: any ISO.`9075`.Database = journal
+            #expect(try await statements(of: existential) == 2)
+        }
+
+        @Test func `a typed throw of the body's own error keeps its type through each scope`() async {
+            let journal = Journal()
+            await #expect(throws: ISO.`9075`.Failure<Refusal>.body(Refusal())) {
+                try await journal.read { _ throws(Refusal) in throw Refusal() }
+            }
+            await #expect(throws: ISO.`9075`.Failure<Refusal>.body(Refusal())) {
+                try await journal.withRollback { _ throws(Refusal) in throw Refusal() }
+            }
+        }
     }
 }

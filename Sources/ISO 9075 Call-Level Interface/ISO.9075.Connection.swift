@@ -1,5 +1,9 @@
 extension ISO.`9075` {
-    public protocol Connection {
+    /// What a body is lent: one connection, for the length of one scope.
+    ///
+    /// A conformer may be neither copyable nor escapable, and an engine's own handle should be neither: then the body
+    /// cannot keep the connection past its scope. The protocol permits that and does not require it.
+    public protocol Connection: ~Copyable, ~Escapable {
         associatedtype Dialect: ISO.`9075`.Dialect
         associatedtype Row: ISO.`9075`.Row
 
@@ -14,7 +18,7 @@ extension ISO.`9075` {
     }
 }
 
-extension ISO.`9075`.Connection {
+extension ISO.`9075`.Connection where Self: ~Copyable, Self: ~Escapable {
     public func execute(_ fragment: ISO.`9075`.Fragment) throws(ISO.`9075`.Error) -> Int {
         try execute(rendering(fragment))
     }
