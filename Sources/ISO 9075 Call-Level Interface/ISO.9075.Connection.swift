@@ -5,7 +5,7 @@ extension ISO.`9075` {
     /// cannot keep the connection past its scope. The protocol permits that and does not require it.
     public protocol Connection: ~Copyable, ~Escapable {
         associatedtype Dialect: ISO.`9075`.Dialect
-        associatedtype Row: ISO.`9075`.Row
+        associatedtype Row: ISO.`9075`.Row & ~Escapable
 
         var dialect: Dialect { get }
 
